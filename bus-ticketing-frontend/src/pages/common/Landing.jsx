@@ -1,9 +1,10 @@
 import React from 'react';
-//import Booking from '../customer/Booking.jsx';
-
 
 const Landing = () => (
-  <div>Landing Page</div>
+  <div className="page landing">
+    <h1>Welcome to Ticket Nepal</h1>
+    <p>Minimal landing — search for buses, destinations and promotions.</p>
+  </div>
 );
 
 export default Landing;
