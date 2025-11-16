@@ -1,8 +1,427 @@
+/**
+ * Auth Pages CSS - Login ra Signup pages ko styling
+ * Mobile-first responsive design
+ * Green (#2e7d32) and Yellow (#f9a825) theme
+ */
+
 @import './_design_tokens.css';
-.signup-page { max-width:420px; margin:40px auto; padding:22px; border-radius:12px; background:var(--surface); border:1px solid var(--border); }
-.signup-title { text-align:center; margin-bottom:12px; color:var(--primary-variant); }
-.signup-field { margin-bottom:12px; }
-.signup-input { width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); }
-.signup-btn { width:100%; padding:10px; background:var(--primary); color:#fff; border-radius:8px; border:none; }
-.signup-error { color:#c62828; }
-.signup-link { text-align:center; margin-top:12px; }
+
+/* ===== RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== AUTH PAGE CONTAINER ===== */
+.auth-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary, #2e7d32) 0%, #1b5e20 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ===== AUTH CARD ===== */
+.auth-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  margin-bottom: 20px;
+}
+
+/* ===== HEADER SECTION ===== */
+.auth-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-logo {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary, #2e7d32);
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+}
+
+/* ===== ERROR MESSAGE ===== */
+.auth-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #c33;
+  font-size: 14px;
+}
+
+.error-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ===== FORM STYLES ===== */
+.auth-form {
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary, #2e7d32);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.form-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.form-input::placeholder {
+  color: #999;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+}
+
+/* ===== PASSWORD INPUT WITH TOGGLE ===== */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper .form-input {
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.password-toggle:hover {
+  opacity: 1;
+}
+
+/* ===== CHECKBOX ===== */
+.form-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.form-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--primary, #2e7d32);
+  flex-shrink: 0;
+}
+
+.form-checkbox label {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.form-checkbox a {
+  color: var(--primary, #2e7d32);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.form-checkbox a:hover {
+  text-decoration: underline;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Button (Submit) */
+.btn-primary {
+  background: var(--primary, #2e7d32);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #1b5e20;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Google Button */
+.btn-google {
+  background: white;
+  color: #333;
+  border: 2px solid #e0e0e0;
+}
+
+.btn-google:hover:not(:disabled) {
+  background: #f8f8f8;
+  border-color: #ccc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===== DIVIDER ===== */
+.auth-divider {
+  text-align: center;
+  margin: 24px 0;
+  position: relative;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+.auth-divider::before {
+  left: 0;
+}
+
+.auth-divider::after {
+  right: 0;
+}
+
+.auth-divider span {
+  background: white;
+  padding: 0 16px;
+  color: #999;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ===== SWITCH LINK (Login/Signup toggle) ===== */
+.auth-switch {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.auth-switch p {
+  font-size: 14px;
+  color: #666;
+}
+
+.switch-link {
+  color: var(--primary, #2e7d32);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== INFO SECTION ===== */
+.auth-info {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+}
+
+.auth-info h3 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.auth-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.auth-info li {
+  font-size: 14px;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+/* ===== FORGOT PASSWORD LINK ===== */
+.forgot-password {
+  text-align: right;
+  margin-top: -12px;
+  margin-bottom: 20px;
+}
+
+.forgot-password a {
+  font-size: 13px;
+  color: var(--primary, #2e7d32);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+/* Tablet (480px+) */
+@media (min-width: 480px) {
+  .auth-card {
+    padding: 40px 32px;
+  }
+
+  .auth-title {
+    font-size: 28px;
+  }
+
+  .auth-subtitle {
+    font-size: 15px;
+  }
+
+  .form-input {
+    font-size: 16px;
+  }
+}
+
+/* Desktop (768px+) */
+@media (min-width: 768px) {
+  .auth-page {
+    padding: 40px;
+  }
+
+  .auth-container {
+    max-width: 520px;
+  }
+
+  .auth-card {
+    padding: 48px 40px;
+  }
+
+  .auth-logo {
+    font-size: 56px;
+  }
+
+  .auth-title {
+    font-size: 32px;
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Focus visible */
+.btn:focus-visible {
+  outline: 3px solid var(--accent, #f9a825);
+  outline-offset: 2px;
+}
+
+.form-input:focus-visible {
+  outline: none;
+  border-color: var(--primary, #2e7d32);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.2);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .form-input {
+    border-width: 3px;
+  }
+
+  .btn {
+    border: 2px solid currentColor;
+  }
+}

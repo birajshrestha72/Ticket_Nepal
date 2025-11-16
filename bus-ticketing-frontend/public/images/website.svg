@@ -1,0 +1,16 @@
+<!-- Placeholder SVG for website banner image -->
+<svg width="1920" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2e7d32;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1b5e20;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="400" fill="url(#grad)"/>
+  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="64" font-family="Arial, sans-serif" font-weight="bold">
+    Ticket Nepal - Bus Ticketing System
+  </text>
+  <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" fill="#f9a825" font-size="32" font-family="Arial, sans-serif">
+    Nepal's Premier Online Bus Booking Platform
+  </text>
+</svg>

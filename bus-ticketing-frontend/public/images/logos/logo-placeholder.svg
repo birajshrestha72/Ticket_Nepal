@@ -1,0 +1,8 @@
+<!-- SVG Logo Placeholder for Ticket Nepal -->
+<!-- Replace with actual logo.png when ready -->
+<svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="40" fill="#2e7d32" rx="8"/>
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white" text-anchor="middle">
+    Ticket Nepal
+  </text>
+</svg>

@@ -24,10 +24,8 @@ const Footer = () => {
         <div className="footer-section sitemap">
           <h4>Sitemap</h4>
           <ul>
-            <li><a href="/">🏠 Home</a></li>
-            <li><a href="/about">👥 About Us</a></li>
-            <li><a href="/games-services">🎮 Games & Services</a></li>
-            <li><a href="/locations">📍 Our Locations</a></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About Us</a></li>
             <li><a href="#">🔝 Back to Top</a></li>
           </ul>
         </div>

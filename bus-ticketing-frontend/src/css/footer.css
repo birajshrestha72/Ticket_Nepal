@@ -1,10 +1,415 @@
-/* Basic footer styles */
-.footer {
-  background: #333;
-  color: #fff;
-  padding: 12px;
-  text-align: center;
-  position: fixed;
+@import './_design_tokens.css';
+
+/* ============================================================================
+   FOOTER COMPONENT - Minimalistic Flat Design
+   Green & Yellow Theme - 100% Width Responsive
+   ============================================================================ */
+
+/* ===== MAIN FOOTER CONTAINER ===== */
+/* 100% width footer - Sabai screen size ma full width */
+.site-footer {
   width: 100%;
-  bottom: 0;
+  background: var(--primary-variant); /* Dark green - #1b5e20 */
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 60px;
+  border-top: 4px solid var(--accent); /* Yellow accent border */
+}
+
+/* Main footer content area */
+.footer-content {
+  max-width: 100%;
+  padding: 32px 20px 20px; /* Reduced padding from 48px to 32px */
+  display: grid;
+  grid-template-columns: 1fr; /* Mobile first - single column */
+  gap: 24px; /* Reduced gap from 32px to 24px */
+}
+
+/* ===== FOOTER SECTIONS - COMMON STYLES ===== */
+.footer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Reduced from 16px to 12px */
+}
+
+.footer-title {
+  color: var(--accent); /* Yellow heading */
+  font-size: 1rem; /* Reduced from 1.1rem to 1rem */
+  font-weight: 700;
+  margin: 0 0 8px; /* Reduced bottom margin from 12px to 8px */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== SECTION 1: LOGO & BRAND ===== */
+.footer-brand {
+  max-width: 100%;
+}
+
+.footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Reduced from 12px to 10px */
+  text-decoration: none;
+  margin-bottom: 12px; /* Reduced from 16px to 12px */
+}
+
+.footer-logo-image {
+  height: 35px; /* Reduced from 45px to 35px */
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1); /* Make logo white */
+}
+
+.footer-logo-text {
+  color: white;
+  font-size: 1.3rem; /* Reduced from 1.5rem to 1.3rem */
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Hide text if image loads */
+.footer-logo-image + .footer-logo-text {
+  display: none;
+}
+
+.footer-description {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5; /* Reduced from 1.6 to 1.5 */
+  margin: 0 0 8px; /* Reduced from 12px to 8px */
+  font-size: 0.875rem; /* Reduced from 0.95rem to 0.875rem */
+}
+
+.footer-tagline {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  margin: 0;
+}
+
+/* ===== SECTION 2 & 3: SITEMAP & DETAILS ===== */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px; /* Reduced from 10px to 6px */
+}
+
+.footer-links li {
+  margin: 0;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.875rem; /* Reduced from 0.95rem to 0.875rem */
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Reduced from 8px to 6px */
+  padding: 4px 0; /* Reduced from 6px to 4px */
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  padding-left: 8px;
+}
+
+.footer-links a:hover {
+  color: var(--accent); /* Yellow on hover */
+  border-left-color: var(--accent);
+  padding-left: 12px;
+}
+
+/* ===== SECTION 4: SOCIAL MEDIA ===== */
+.footer-social {
+  gap: 12px; /* Reduced from 20px to 12px */
+}
+
+.social-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  margin: -4px 0 6px; /* Reduced margins */
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; /* Reduced from 12px to 8px */
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Reduced from 8px to 6px */
+  padding: 8px 12px; /* Reduced from 10px 16px to 8px 12px */
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  text-decoration: none;
+  border-radius: 6px; /* Reduced from 8px to 6px */
+  font-weight: 600;
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link:hover {
+  background: var(--accent);
+  color: var(--primary-variant);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249, 168, 37, 0.3);
+}
+
+.social-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+/* Payment methods section */
+.payment-methods {
+  margin-top: 12px; /* Reduced from 24px to 12px */
+  padding-top: 12px; /* Reduced from 20px to 12px */
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.payment-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  font-weight: 600;
+  margin: 0 0 8px; /* Reduced from 12px to 8px */
+}
+
+.payment-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px; /* Reduced from 10px to 6px */
+}
+
+.payment-badge {
+  padding: 4px 10px; /* Reduced from 6px 14px to 4px 10px */
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px; /* Reduced from 6px to 4px */
+  font-size: 0.8rem; /* Reduced from 0.85rem to 0.8rem */
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== SECTION 5: CONTACT DETAILS ===== */
+.contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Reduced from 20px to 12px */
+}
+
+.contact-item {
+  display: flex;
+  gap: 10px; /* Reduced from 12px to 10px */
+  align-items: flex-start;
+}
+
+.contact-icon {
+  font-size: 1.2rem; /* Reduced from 1.5rem to 1.2rem */
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Reduced from 6px to 4px */
+  flex: 1;
+}
+
+.contact-info strong {
+  color: var(--accent);
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.contact-info a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.875rem; /* Reduced from 0.95rem to 0.875rem */
+  transition: color 0.2s;
+}
+
+.contact-info a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.contact-info span {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  line-height: 1.4; /* Reduced from 1.5 to 1.4 */
+}
+
+/* ===== FOOTER BOTTOM - COPYRIGHT ===== */
+.footer-bottom {
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 20px; /* Reduced from 20px to 16px */
+}
+
+.footer-bottom-content {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px; /* Reduced from 12px to 8px */
+  text-align: center;
+}
+
+.copyright {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem; /* Reduced from 0.9rem to 0.85rem */
+  margin: 0;
+}
+
+.footer-bottom-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px; /* Reduced from 8px to 6px */
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-bottom-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.8rem; /* Reduced from 0.85rem to 0.8rem */
+  transition: color 0.2s;
+}
+
+.footer-bottom-links a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.separator {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+}
+
+/* ============================================================================
+   TABLET RESPONSIVE (480px - 767px)
+   ============================================================================ */
+@media (min-width: 480px) {
+  .footer-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 20px; /* Reduced from 32px 24px to 24px 20px */
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1; /* Full width for logo section */
+  }
+
+  .social-links {
+    gap: 8px;
+  }
+
+  .social-link {
+    flex: 1;
+    min-width: 130px; /* Reduced from 140px to 130px */
+    justify-content: center;
+  }
+}
+
+/* ============================================================================
+   TABLET LANDSCAPE (768px - 1023px)
+   ============================================================================ */
+@media (min-width: 768px) {
+  .footer-content {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px 24px; /* Reduced from 40px 32px to 28px 24px */
+    padding: 40px 32px 28px; /* Reduced from 56px 32px 40px */
+  }
+
+  .footer-brand {
+    grid-column: 1 / 2;
+  }
+
+  .footer-bottom-content {
+    flex-direction: row;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+}
+
+/* ============================================================================
+   DESKTOP (1024px+)
+   ============================================================================ */
+@media (min-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.3fr;
+    gap: 32px 28px; /* Reduced from 48px 40px to 32px 28px */
+    padding: 48px 48px 32px; /* Reduced from 64px 48px 48px */
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .footer-brand {
+    grid-column: 1 / 2;
+  }
+
+  .footer-bottom-content {
+    padding: 0 48px;
+  }
+
+  .social-link {
+    min-width: auto;
+  }
+}
+
+/* ============================================================================
+   LARGE DESKTOP (1440px+)
+   ============================================================================ */
+@media (min-width: 1440px) {
+  .footer-content {
+    max-width: 1600px;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY & PRINT
+   ============================================================================ */
+
+/* Focus states for keyboard navigation */
+.footer-links a:focus,
+.social-link:focus,
+.contact-info a:focus,
+.footer-bottom-links a:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .footer-links a,
+  .social-link,
+  .contact-info a,
+  .footer-bottom-links a {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .site-footer {
+    display: none;
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  .site-footer {
+    background: #0a2f0d;
+  }
 }

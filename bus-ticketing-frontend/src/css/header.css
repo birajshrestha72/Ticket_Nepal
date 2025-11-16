@@ -1,3 +1,411 @@
 @import './_design_tokens.css';
-.header { background: linear-gradient(90deg,var(--primary),var(--primary-variant)); color:#fff; padding:14px 20px; }
-.header h1 { margin:0; font-size:18px; }
+
+/* ============================================================================
+   HEADER COMPONENT - Minimalistic Flat Design
+   Green & Yellow Theme - 100% Width Responsive
+   ============================================================================ */
+
+/* ===== MAIN HEADER CONTAINER ===== */
+/* 100% width - Sabai screen size ma full width */
+.site-header {
+  width: 100%;
+  background: var(--primary); /* Green background - #2e7d32 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 3px solid var(--accent); /* Yellow accent border - #f9a825 */
+}
+
+/* Inner container - Controls max-width and padding */
+.header-container {
+  max-width: 100%;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  margin: 0 auto;
+}
+
+/* ===== LEFT SIDE - LOGO ===== */
+/* Logo section - Left aligned */
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+  transition: opacity 0.2s;
+}
+
+.header-logo:hover {
+  opacity: 0.9;
+}
+
+/* Logo image styling */
+.logo-image {
+  height: 85px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* Logo text - Fallback if image doesn't load */
+.logo-text {
+  color: white;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Hide text by default if image exists */
+.logo-image + .logo-text {
+  display: none;
+}
+
+/* ===== MOBILE HAMBURGER MENU ===== */
+/* Hamburger icon - Mobile ma dekhincha */
+.mobile-menu-toggle {
+  display: none; /* Desktop ma hide */
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 1001;
+}
+
+.hamburger-line {
+  width: 25px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+
+/* ===== RIGHT SIDE - NAVIGATION ===== */
+/* Main navigation container - Right aligned */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Navigation links - Flat design buttons */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.1); /* Subtle transparent background */
+}
+
+.nav-link:hover {
+  background: var(--accent); /* Yellow hover - #f9a825 */
+  color: var(--primary-variant); /* Dark green text on hover */
+  transform: translateY(-1px);
+}
+
+.nav-link:active {
+  transform: translateY(0);
+}
+
+/* Navigation icons - Emoji based for minimal design */
+.nav-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.nav-text {
+  white-space: nowrap;
+}
+
+/* ===== PROFILE SECTION ===== */
+/* Profile/Login area */
+.nav-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Profile link styling */
+.profile-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  transition: all 0.2s;
+}
+
+.profile-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.profile-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.profile-name {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+/* Login button - When not logged in */
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--accent); /* Yellow background */
+  color: var(--primary-variant); /* Dark green text */
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-btn:hover {
+  background: #ffd54f; /* Lighter yellow on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Logout button */
+.logout-btn {
+  padding: 8px 16px;
+  background: rgba(244, 67, 54, 0.9); /* Red background */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: rgb(211, 47, 47);
+  transform: translateY(-1px);
+}
+
+/* ===== DEV MODE BUTTONS ===== */
+/* Development mode quick login buttons - Remove in production */
+.dev-mode-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  margin-left: 8px;
+}
+
+.dev-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dev-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================================
+   MOBILE RESPONSIVE - Portrait View (< 768px)
+   ============================================================================ */
+@media (max-width: 767px) {
+  /* Show hamburger menu on mobile */
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* Hide navigation by default on mobile */
+  .header-nav {
+    position: fixed;
+    top: 64px;
+    right: -100%;
+    width: 280px;
+    height: calc(100vh - 64px);
+    background: var(--primary);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 20px;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+    transition: right 0.3s ease;
+    overflow-y: auto;
+  }
+
+  /* Show navigation when mobile menu is open */
+  .header-nav.mobile-open {
+    right: 0;
+  }
+
+  /* Navigation links - Full width on mobile */
+  .nav-link {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .nav-link:hover {
+    background: var(--accent);
+  }
+
+  /* Profile section - Full width on mobile */
+  .nav-profile {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding-top: 16px;
+    margin-top: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .profile-link,
+  .login-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+  }
+
+  .logout-btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  /* Dev mode buttons - Stack vertically on mobile */
+  .dev-mode-buttons {
+    flex-direction: column;
+    margin-left: 0;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dev-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* Hamburger animation when open */
+  .mobile-open ~ .mobile-menu-toggle .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+  }
+
+  .mobile-open ~ .mobile-menu-toggle .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-open ~ .mobile-menu-toggle .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+  }
+}
+
+/* ============================================================================
+   TABLET RESPONSIVE (768px - 1023px)
+   ============================================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .header-container {
+    padding: 0 24px;
+  }
+
+  .nav-link {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .nav-text {
+    display: none; /* Hide text, show only icons on tablet */
+  }
+
+  .nav-icon {
+    font-size: 1.3rem;
+  }
+
+  .dev-mode-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+/* ============================================================================
+   DESKTOP LARGE (1024px+)
+   ============================================================================ */
+@media (min-width: 1024px) {
+  .header-container {
+    max-width: 1400px;
+    padding: 0 40px;
+  }
+
+  .nav-link {
+    padding: 10px 18px;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY & PRINT
+   ============================================================================ */
+
+/* Focus states for keyboard navigation */
+.nav-link:focus,
+.profile-link:focus,
+.login-btn:focus,
+.logout-btn:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .nav-link,
+  .login-btn,
+  .logout-btn,
+  .header-nav,
+  .hamburger-line {
+    transition: none;
+  }
+}
+
+/* Print styles - Hide header when printing */
+@media print {
+  .site-header {
+    display: none;
+  }
+}
