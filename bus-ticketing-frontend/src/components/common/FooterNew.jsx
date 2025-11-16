@@ -29,7 +29,7 @@ const FooterNew = () => {
             Safe, fast, ra bharosemand sewa.
           </p>
           <p className="footer-tagline">
-            🚌 Your trusted travel partner across Nepal
+            Your trusted travel partner across Nepal
           </p>
         </div>
 
@@ -38,12 +38,12 @@ const FooterNew = () => {
         <div className="footer-section footer-sitemap">
           <h3 className="footer-title">Sitemap (Quick Links)</h3>
           <ul className="footer-links">
-            <li><Link to="/">🏠 Home (Ghar)</Link></li>
-            <li><Link to="/search">🔍 Search Buses (Bus Khojnuhos)</Link></li>
-            <li><Link to="/vendors">🚌 Bus Operators (Vendors)</Link></li>
-            <li><Link to="/destinations">📍 Destinations (Gatavyaharu)</Link></li>
-            <li><Link to="/bookings">🎫 My Bookings (Mero Bookings)</Link></li>
-            <li><Link to="/profile">👤 My Profile (Profile)</Link></li>
+            <li><Link to="/">Home (Ghar)</Link></li>
+            <li><Link to="/search">Search Buses (Bus Khojnuhos)</Link></li>
+            <li><Link to="/vendors">Bus Operators (Vendors)</Link></li>
+            <li><Link to="/destinations">Destinations (Gatavyaharu)</Link></li>
+            <li><Link to="/bookings">My Bookings (Mero Bookings)</Link></li>
+            <li><Link to="/profile">My Profile (Profile)</Link></li>
           </ul>
         </div>
 
@@ -52,12 +52,12 @@ const FooterNew = () => {
         <div className="footer-section footer-details">
           <h3 className="footer-title">Website Details (Jaankari)</h3>
           <ul className="footer-links">
-            <li><Link to="/about">ℹ️ About Us (Hamro Baare)</Link></li>
-            <li><Link to="/how-it-works">❓ How It Works (Kasto Kaam Garcha)</Link></li>
-            <li><Link to="/terms">📋 Terms & Conditions</Link></li>
-            <li><Link to="/privacy">🔒 Privacy Policy</Link></li>
-            <li><Link to="/refund-policy">💰 Refund Policy</Link></li>
-            <li><Link to="/faq">💬 FAQ (Prasnaharu)</Link></li>
+            <li><Link to="/about">About Us (Hamro Baare)</Link></li>
+            <li><Link to="/how-it-works">How It Works (Kasto Kaam Garcha)</Link></li>
+            <li><Link to="/terms">Terms & Conditions</Link></li>
+            <li><Link to="/privacy">Privacy Policy</Link></li>
+            <li><Link to="/refund-policy">Refund Policy</Link></li>
+            <li><Link to="/faq">FAQ (Prasnaharu)</Link></li>
           </ul>
         </div>
 
@@ -74,7 +74,7 @@ const FooterNew = () => {
               className="social-link facebook"
               aria-label="Facebook"
             >
-              <span className="social-icon">📘</span>
+              <span className="social-icon"></span>
               <span className="social-text">Facebook</span>
             </a>
             <a 
@@ -84,29 +84,10 @@ const FooterNew = () => {
               className="social-link instagram"
               aria-label="Instagram"
             >
-              <span className="social-icon">📷</span>
+              <span className="social-icon"></span>
               <span className="social-text">Instagram</span>
             </a>
-            <a 
-              href="https://twitter.com/ticketnepal" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link twitter"
-              aria-label="Twitter"
-            >
-              <span className="social-icon">🐦</span>
-              <span className="social-text">Twitter</span>
-            </a>
-            <a 
-              href="https://youtube.com/ticketnepal" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="social-link youtube"
-              aria-label="YouTube"
-            >
-              <span className="social-icon">📺</span>
-              <span className="social-text">YouTube</span>
-            </a>
+            
           </div>
           <div className="payment-methods">
             <h4 className="payment-title">Payment Partners:</h4>
@@ -132,7 +113,7 @@ const FooterNew = () => {
               </div>
             </li>
             <li className="contact-item">
-              <span className="contact-icon">✉️</span>
+              <span className="contact-icon"></span>
               <div className="contact-info">
                 <strong>Email:</strong>
                 <a href="mailto:info@ticketnepal.com">info@ticketnepal.com</a>
@@ -140,7 +121,7 @@ const FooterNew = () => {
               </div>
             </li>
             <li className="contact-item">
-              <span className="contact-icon">📍</span>
+              <span className="contact-icon"></span>
               <div className="contact-info">
                 <strong>Address (Thegana):</strong>
                 <span>Kathmandu, Nepal</span>
@@ -148,7 +129,7 @@ const FooterNew = () => {
               </div>
             </li>
             <li className="contact-item">
-              <span className="contact-icon">⏰</span>
+              <span className="contact-icon"></span>
               <div className="contact-info">
                 <strong>Support Hours:</strong>
                 <span>24/7 Customer Service</span>

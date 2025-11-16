@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import '../../css/signup.css';
 
-const API_URL = 'http://localhost:8000/api/v1';
-
 /**
- * Customer Signup Page Component
- * Handles customer registration with email/password and Google OAuth
+ * Signup Page Component - Naya user registration page
+ * Email/Password signup ra Google OAuth
+ * Firebase authentication use garcha
  */
 const Signup = () => {
   const navigate = useNavigate();
-  const { loginAs } = useAuth();
+  const { loginAs } = useAuth(); // Mock auth (backend ready bhaye pachi hataucha)
   
-  // Form state
+  // Form state - User details store garcha
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     phone: '',
     password: '',
@@ -29,9 +28,10 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   /**
-   * Handle input changes
+   * Input field change handler
    */
   const handleChange = (e) => {
     setFormData({
@@ -42,90 +42,116 @@ const Signup = () => {
   };
 
   /**
-   * Validate form data
+   * Form validation - Submit agadi check garcha
    */
   const validateForm = () => {
-    if (!formData.name || formData.name.length < 3) {
-      setError('Name must be at least 3 characters');
+    // Empty fields check
+    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Sabai field halnuhos (Please fill all fields)');
       return false;
     }
-    
-    if (!formData.email) {
-      setError('Email is required');
+
+    // Name length check
+    if (formData.fullName.length < 3) {
+      setError('Pura naam kam se kam 3 akshara hunu parne (Name must be at least 3 characters)');
       return false;
     }
-    
-    if (formData.phone && !/^9\d{9}$/.test(formData.phone)) {
-      setError('Invalid Nepal phone number (Must start with 9 and be 10 digits)');
+
+    // Email format check (basic)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Valid email halnuhos (Please enter a valid email)');
       return false;
     }
-    
-    if (!formData.password || formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+
+    // Phone validation (optional but if filled, must be valid)
+    if (formData.phone && formData.phone.length < 10) {
+      setError('Valid phone number halnuhos (Please enter a valid phone number)');
       return false;
     }
-    
+
+    // Password strength check
+    if (formData.password.length < 6) {
+      setError('Password kam se kam 6 character hunu parne (Password must be at least 6 characters)');
+      return false;
+    }
+
+    // Password match check
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError('Password match bhayena (Passwords do not match)');
       return false;
     }
-    
+
+    // Terms acceptance check
+    if (!acceptedTerms) {
+      setError('Terms ra conditions swikar garnuhos (Please accept terms and conditions)');
+      return false;
+    }
+
     return true;
   };
 
   /**
-   * Handle customer registration
+   * Email/Password signup handler
+   * Firebase ma naya user create garcha
    */
-  const handleRegister = async (e) => {
+  const handleEmailSignup = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     setLoading(true);
     setError('');
 
     try {
-      // Backend API call
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          password: formData.password,
-          role: 'customer'
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || data.message || 'Registration failed');
-      }
-
-      // Success - Store token and user data
-      const { user, token } = data.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      // Firebase create user with email/password
+      // Backend ready bhaye pachi uncomment garnuhos:
+      // const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      // const user = userCredential.user;
       
-      // Update auth context
-      loginAs(user.role);
+      // Backend API call - User details save garcha database ma
+      // const response = await fetch('/api/users/register', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     name: formData.fullName,
+      //     email: formData.email,
+      //     phone: formData.phone,
+      //     password: formData.password,
+      //     role: 'customer'
+      //   })
+      // });
+
+      // Temporary mock signup
+      console.log('Signup attempt:', formData);
       
-      // Redirect based on role (customer signup)
-      navigate('/customer');
+      setTimeout(() => {
+        loginAs('user'); // Mock auth
+        navigate('/'); // Homepage ma redirect
+      }, 1000);
 
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Registration failed. Please try again.');
+      console.error('Signup error:', err);
+      
+      // Firebase error handling
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Yo email pahile nai register cha (Email already registered)');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Invalid email format');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password dherai kamzor cha (Password too weak)');
+      } else {
+        setError('Signup garna sakenah. Pheri koshish garnuhos (Signup failed. Try again)');
+      }
       setLoading(false);
     }
   };
 
   /**
-   * Handle Google Sign-Up
+   * Google Sign-Up handler
+   * Google OAuth use garera signup garcha
    */
   const handleGoogleSignup = async () => {
     setLoading(true);
@@ -133,50 +159,17 @@ const Signup = () => {
 
     try {
       // Firebase Google sign in
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+      // Backend ready bhaye pachi uncomment:
+      // const result = await signInWithPopup(auth, googleProvider);
+      // const user = result.user;
       
-      // Get ID token
-      const idToken = await user.getIdToken();
-      
-      // Send to backend
-      const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken: idToken,
-          role: 'customer'
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Google signup failed');
-      }
-
-      // Success
-      const { user: userData, token } = data.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      loginAs(userData.role);
-      
-      // Redirect to customer dashboard
-      navigate('/customer');
+      console.log('Google signup clicked');
+      alert('Google Sign-Up - Firebase configuration purai garnuhos');
+      setLoading(false);
 
     } catch (err) {
       console.error('Google signup error:', err);
-      
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Signup cancelled');
-      } else if (err.code === 'auth/configuration-not-found') {
-        setError('Firebase not configured. Please contact admin.');
-      } else {
-        setError(err.message || 'Google signup failed');
-      }
+      setError('Google signup sakenah (Google signup failed)');
       setLoading(false);
     }
   };
@@ -184,16 +177,16 @@ const Signup = () => {
   return (
     <div className="auth-page signup-page">
       <div className="auth-container">
-        {/* Signup Card */}
+        {/* ===== SIGNUP CARD ===== */}
         <div className="auth-card">
           {/* Header */}
           <div className="auth-header">
             <div className="auth-logo">🎫</div>
-            <h1 className="auth-title">Create Account</h1>
-            <p className="auth-subtitle">Join Ticket Nepal for seamless bus booking</p>
+            <h1 className="auth-title">Sign Up (Darta Garnuhos)</h1>
+            <p className="auth-subtitle">Create your Ticket Nepal account</p>
           </div>
 
-          {/* Error Message */}
+          {/* Error message */}
           {error && (
             <div className="auth-error">
               <span className="error-icon">⚠️</span>
@@ -201,31 +194,30 @@ const Signup = () => {
             </div>
           )}
 
-          {/* Registration Form */}
-          <form className="auth-form" onSubmit={handleRegister}>
-            {/* Name Field */}
+          {/* ===== SIGNUP FORM ===== */}
+          <form className="auth-form" onSubmit={handleEmailSignup}>
+            {/* Full Name */}
             <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Full Name *
+              <label htmlFor="fullName" className="form-label">
+                Pura Naam (Full Name) *
               </label>
               <input
                 type="text"
-                id="name"
-                name="name"
+                id="fullName"
+                name="fullName"
                 className="form-input"
                 placeholder="Ram Bahadur Thapa"
-                value={formData.name}
+                value={formData.fullName}
                 onChange={handleChange}
                 disabled={loading}
-                autoComplete="name"
                 required
               />
             </div>
 
-            {/* Email Field */}
+            {/* Email */}
             <div className="form-group">
               <label htmlFor="email" className="form-label">
-                Email *
+                Email Address *
               </label>
               <input
                 type="email"
@@ -236,12 +228,11 @@ const Signup = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
-                autoComplete="email"
                 required
               />
             </div>
 
-            {/* Phone Field */}
+            {/* Phone (Optional) */}
             <div className="form-group">
               <label htmlFor="phone" className="form-label">
                 Phone Number (Optional)
@@ -255,16 +246,13 @@ const Signup = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={loading}
-                autoComplete="tel"
-                maxLength="10"
               />
-              <small className="form-hint">Nepal phone number (10 digits, starts with 9)</small>
             </div>
 
-            {/* Password Field */}
+            {/* Password */}
             <div className="form-group">
               <label htmlFor="password" className="form-label">
-                Password *
+                Password (Gupyashabad) *
               </label>
               <div className="password-input-wrapper">
                 <input
@@ -276,22 +264,21 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   disabled={loading}
-                  autoComplete="new-password"
                   required
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
-              <small className="form-hint">Minimum 6 characters</small>
+              <small className="form-hint">Kam se kam 6 characters (At least 6 characters)</small>
             </div>
 
-            {/* Confirm Password Field */}
+            {/* Confirm Password */}
             <div className="form-group">
               <label htmlFor="confirmPassword" className="form-label">
                 Confirm Password *
@@ -306,36 +293,52 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   disabled={loading}
-                  autoComplete="new-password"
                   required
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  aria-label="Toggle password visibility"
                 >
                   {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
                 </button>
               </div>
             </div>
 
-            {/* Sign Up Button */}
+            {/* Terms and Conditions */}
+            <div className="form-checkbox">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                disabled={loading}
+              />
+              <label htmlFor="terms">
+                I accept the{' '}
+                <Link to="/terms" target="_blank">Terms & Conditions</Link>
+                {' '}and{' '}
+                <Link to="/privacy" target="_blank">Privacy Policy</Link>
+              </label>
+            </div>
+
+            {/* Submit button */}
             <button 
               type="submit" 
               className="btn btn-primary btn-auth"
               disabled={loading}
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? 'Creating account...' : 'Sign Up (Darta Garnuhos)'}
             </button>
           </form>
 
-          {/* Divider */}
+          {/* ===== DIVIDER ===== */}
           <div className="auth-divider">
-            <span>OR</span>
+            <span>OR (Athawa)</span>
           </div>
 
-          {/* Google Sign-Up Button */}
+          {/* ===== GOOGLE SIGN-UP BUTTON ===== */}
           <button 
             type="button"
             className="btn btn-google"
@@ -350,36 +353,26 @@ const Signup = () => {
             <span>Sign up with Google</span>
           </button>
 
-          {/* Vendor Signup Link */}
-          <div className="vendor-signup-notice">
-            <p>
-              Want to register as a bus vendor?
-              <Link to="/vendor-signup" className="vendor-link">
-                {' '}Register as Vendor
-              </Link>
-            </p>
-          </div>
-
-          {/* Login Link */}
+          {/* ===== LOGIN LINK ===== */}
           <div className="auth-switch">
             <p>
-              Already have an account?
+              Pahile nai account cha? (Already have an account?)
               <Link to="/login" className="switch-link">
-                {' '}Login
+                {' '}Login garnuhos (Login)
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Info Section */}
+        {/* ===== INFO SECTION ===== */}
         <div className="auth-info">
-          <h3>🚌 Why Choose Ticket Nepal?</h3>
+          <h3>🎯 Kina Ticket Nepal?</h3>
           <ul>
-            <li>✅ Easy & quick booking</li>
-            <li>✅ Wide range of bus operators</li>
-            <li>✅ Secure online payments</li>
-            <li>✅ Instant confirmation</li>
-            <li>✅ 24/7 customer support</li>
+            <li>✅ Free account registration</li>
+            <li>✅ Booking history tracking</li>
+            <li>✅ Special offers ra discounts</li>
+            <li>✅ Easy cancellation process</li>
+            <li>✅ Verified bus operators</li>
           </ul>
         </div>
       </div>

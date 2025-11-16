@@ -15,7 +15,7 @@ const HeaderNew = () => {
   return (
     <header className="site-header">
       <div className="header-container">
-        {/* ===== LEFT SIDE - LOGO ===== */}
+        {/* ===== LEFT SIDE KO LOGO ===== */}
         {/* Logo - Always visible, left aligned */}
         <Link to="/" className="header-logo">
           <img 
@@ -23,7 +23,7 @@ const HeaderNew = () => {
             alt="Ticket Nepal Logo" 
             className="logo-image"
             onError={(e) => {
-              // Fallback - Agar image load nahuna bhane text dekhaucha
+              // Fallback - if image load nahuna bhane text dekhaucha
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'block';
             }}
@@ -31,7 +31,6 @@ const HeaderNew = () => {
           <span className="logo-text">Ticket Nepal</span>
         </Link>
 
-        {/* ===== HAMBURGER MENU - MOBILE ONLY ===== */}
         {/* Mobile ma hamburger icon dekhaucha */}
         <button 
           className="mobile-menu-toggle" 
@@ -43,27 +42,22 @@ const HeaderNew = () => {
           <span className="hamburger-line"></span>
         </button>
 
-        {/* ===== RIGHT SIDE - NAVIGATION ===== */}
+  
         {/* Navigation links - Desktop ma right aligned, mobile ma dropdown */}
         <nav className={`header-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-          {/* Main navigation links */}
-          <Link to="/" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span className="nav-text">Home</span>
-          </Link>
-          
-          <Link to="/search" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span className="nav-text">Search</span>
-          </Link>
-          
-          <Link to="/vendors" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span className="nav-text">Vendors</span>
-          </Link>
-          
-          <Link to="/destinations" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
-            <span className="nav-text">Destinations</span>
-          </Link>
+                <Link to="/" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <span className="nav-text">Home</span>
+                </Link>
+                
+                <Link to="/vendors" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <span className="nav-text">Vendors</span>
+                </Link>
+                
+                <Link to="/destinations" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
+                <span className="nav-text">Destinations</span>
+                </Link>
 
-          {/* User profile section - Login status depending */}
+                {/* User profile section - Login status depending */}
           <div className="nav-profile">
             {user ? (
               // Logged in user - Profile dropdown

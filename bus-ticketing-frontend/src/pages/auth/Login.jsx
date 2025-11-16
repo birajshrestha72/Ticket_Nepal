@@ -79,12 +79,15 @@ const Login = () => {
       // Update auth context
       loginAs(user.role);
       
-      // Redirect based on role
-      if (user.role === 'vendor') {
+      // Redirect based on role from database: 'customer', 'vendor', 'system_admin'
+      if (user.role === 'system_admin') {
+        navigate('/superadmin');
+      } else if (user.role === 'vendor') {
         navigate('/vendor');
-      } else if (user.role === 'system_admin') {
-        navigate('/admin');
+      } else if (user.role === 'customer') {
+        navigate('/customer');
       } else {
+        // Default fallback
         navigate('/');
       }
 
@@ -134,7 +137,17 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(userData));
       
       loginAs(userData.role);
-      navigate('/');
+      
+      // Redirect based on role
+      if (userData.role === 'system_admin') {
+        navigate('/superadmin');
+      } else if (userData.role === 'vendor') {
+        navigate('/vendor');
+      } else if (userData.role === 'customer') {
+        navigate('/customer');
+      } else {
+        navigate('/');
+      }
 
     } catch (err) {
       console.error('Google login error:', err);

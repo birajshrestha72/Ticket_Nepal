@@ -18,6 +18,7 @@ const Landing = () => {
   const [featuredVendors, setFeaturedVendors] = useState([]); // Verified vendors ko list
   const [stats, setStats] = useState({ totalBuses: 0, totalRoutes: 0, totalBookings: 0 }); // Summary statistics
   const [loading, setLoading] = useState(true); // Loading state - data fetch huncha bela dekhaucha
+  const [cities, setCities] = useState([]); // Available cities for dropdown - database bata aaucha
 
   // Search form ko state - user le search garna ko lagi
   const [searchForm, setSearchForm] = useState({
@@ -48,6 +49,16 @@ const Landing = () => {
       // Temporary mock data - Backend tayar bhaye pachi replace garne
       // Database schema sanga match gareko cha (routes, vendors, bus_schedules tables)
       setTimeout(() => {
+        // Available cities - destinations page ko cities + major tourist destinations
+        const allCities = [
+          'Kathmandu', 'Pokhara', 'Chitwan', 'Lumbini', 'Biratnagar', 'Butwal',
+          'Bharatpur', 'Birgunj', 'Dharan', 'Hetauda', 'Janakpur', 'Nepalgunj',
+          'Bhairahawa', 'Dhangadhi', 'Itahari', 'Tulsipur', 'Ghorahi', 'Damak',
+          'Mustang', 'Dolpa', 'Manang', 'Solukhumbu', 'Rasuwa', 'Mugu',
+          'Kaski', 'Rupandehi', 'Dhanusha', 'Bardiya'
+        ];
+        setCities(allCities.sort());
+
         // Popular routes - routes table ra bus_schedules join garera data
         setPopularRoutes([
           { id: 1, origin: 'Kathmandu', destination: 'Pokhara', distance_km: 200, base_price: 1200, available_schedules: 15 },
@@ -122,9 +133,7 @@ const Landing = () => {
 
   return (
     <div className="landing-page">
-      {/* ===== WEBSITE BANNER IMAGE ===== */}
-      {/* Full width banner image - 100% screen span */}
-      
+     
 
       {/* ===== HERO SECTION ===== */}
       {/* Hero section - Homepage ko main attraction with quick search */}
@@ -140,32 +149,44 @@ const Landing = () => {
           {/* Turat bus search garna milcha - Direct booking workflow */}
           <form className="quick-search-form card" onSubmit={handleSearchSubmit}>
             <div className="search-fields">
-              {/* Origin input - Kahaa bata */}
+              {/* Origin dropdown - Kahaa bata */}
               <div className="search-field">
                 <label htmlFor="origin">Kahaa bata (From)</label>
-                <input
-                  type="text"
+                <select
                   id="origin"
                   name="origin"
-                  placeholder="Kathmandu, Pokhara..."
                   value={searchForm.origin}
                   onChange={handleInputChange}
                   required
-                />
+                  className="search-select"
+                >
+                  <option value="">Select origin city</option>
+                  {cities.map((city) => (
+                    <option key={`origin-${city}`} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
               </div>
               
-              {/* Destination input - Kahaa jaane */}
+              {/* Destination dropdown - Kahaa jaane */}
               <div className="search-field">
                 <label htmlFor="destination">Kahaa jaane (To)</label>
-                <input
-                  type="text"
+                <select
                   id="destination"
                   name="destination"
-                  placeholder="Pokhara, Chitwan..."
                   value={searchForm.destination}
                   onChange={handleInputChange}
                   required
-                />
+                  className="search-select"
+                >
+                  <option value="">Select destination city</option>
+                  {cities.map((city) => (
+                    <option key={`dest-${city}`} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
               </div>
               
               {/* Date input - Kun din (Using DatePicker calendar library) */}
@@ -184,24 +205,29 @@ const Landing = () => {
             </div>
             
             {/* Submit button - Search trigger */}
-            <button type="submit" className="btn btn-primary btn-search">
-              Bus Khojnuhos (Search Buses)
-            </button>
-          </form>
-        </div>
+                  <button type="submit" className="btn btn-primary btn-search">
+                    Bus Khojnuhos (Search Buses)
+                  </button>
+                  </form>
+                </div>
       </section>
 
+
+      <div className="hero-image-container"> {/* ===== WEBSITE BANNER IMAGE ===== */}
+      {/* Full width banner image - 100% screen span */}
       <div className="website-banner">
-        <img 
+        <img
           src={websiteImage}
-          alt="Ticket Nepal - Nepal's Premier Bus Booking Platform" 
+          alt="Ticket Nepal - Nepal's Premier Bus Booking Platform"
           className="banner-image"
           onError={(e) => {
-            e.target.style.display = 'none';
+            e.currentTarget.style.display = 'none';
             console.log('Banner image not found');
           }}
         />
       </div>
+      </div>
+
 
       {/* ===== FEATURES SECTION ===== */}
       {/* Kina Ticket Nepal choose garne - Key selling points */}

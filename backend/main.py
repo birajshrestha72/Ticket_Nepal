@@ -131,6 +131,15 @@ app.include_router(
     tags=["Testing"]
 )
 
+# Import vendors router
+from app.api.routes import vendors
+
+app.include_router(
+    vendors.router,
+    prefix=f"{settings.API_PREFIX}/vendors",
+    tags=["Vendors"]
+)
+
 
 if __name__ == "__main__":
     import uvicorn
