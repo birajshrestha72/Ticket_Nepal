@@ -140,6 +140,24 @@ app.include_router(
     tags=["Vendors"]
 )
 
+# Import buses router
+from app.api.routes import buses
+
+app.include_router(
+    buses.router,
+    prefix=f"{settings.API_PREFIX}/buses",
+    tags=["Buses"]
+)
+
+# Import bookings router
+from app.api.routes import bookings
+
+app.include_router(
+    bookings.router,
+    prefix=f"{settings.API_PREFIX}/bookings",
+    tags=["Bookings"]
+)
+
 
 if __name__ == "__main__":
     import uvicorn

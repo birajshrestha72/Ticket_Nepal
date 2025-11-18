@@ -228,7 +228,7 @@
 .dev-btn {
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: rgb(30, 30, 30);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   font-size: 0.8rem;

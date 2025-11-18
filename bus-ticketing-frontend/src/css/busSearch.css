@@ -1,5 +1,1035 @@
-/* Bus Search page styles */
+/* Bus Search page styles - Displays unique bus types without duplicates */
+@import './_design_tokens.css';
+
 .bus-search {
   padding: 24px;
   background: #fff;
+}
+
+/* Search Page Styles */
+.search {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--surface) 0%, #e8f5e9 100%);
+  padding: 0;
+}
+
+.search-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.search-page-title {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin: 0 0 30px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Search Filters */
+.search-filters {
+  background: white;
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 40px;
+}
+
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.filter-row:last-child {
+  margin-bottom: 0;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-variant);
+}
+
+.filter-field input,
+.filter-field select {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s;
+  background: white;
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.btn-search {
+  grid-column: span 1;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-variant));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  align-self: end;
+}
+
+.btn-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+}
+
+/* Results Summary */
+.results-summary {
+  margin-bottom: 30px;
+}
+
+.results-summary h2 {
+  font-size: 1.8rem;
+  color: var(--primary-variant);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.results-summary p {
+  font-size: 1rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.no-results-icon {
+  font-size: 5rem;
+  margin-bottom: 20px;
+  opacity: 0.3;
+}
+
+.no-results h3 {
+  font-size: 1.8rem;
+  margin: 0 0 12px;
+  color: #333;
+}
+
+.no-results p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #777;
+}
+
+/* Bus Types Grid - Shows unique types only */
+.bus-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 28px;
+}
+
+/* Bus Type Card */
+.bus-type-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bus-type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+}
+
+/* Header */
+.bus-type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.bus-type-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+.bus-count-badge {
+  background: var(--accent);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Vendors List */
+.vendors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vendors-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vendor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vendor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-variant);
+  border: 1px solid #e0e0e0;
+}
+
+.vendor-rating {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+/* Price Range */
+.price-range {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: linear-gradient(135deg, #fff8e1 0%, #fffbf0 100%);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+}
+
+.price-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.price-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Seat Info */
+.seat-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8f8f8;
+  border-radius: 6px;
+}
+
+.seats-available {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.seats-total {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Amenities Preview */
+.amenities-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.amenity-tag {
+  background: var(--primary);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.amenity-more {
+  background: #e0e0e0;
+  color: #666;
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* View Details Button */
+.btn-view-details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, #1b5e20 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.btn-view-details:hover {
+  background: linear-gradient(135deg, #1b5e20 0%, var(--primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+}
+
+/* Quick Bus List */
+.quick-bus-list {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+  margin-top: 8px;
+}
+
+.quick-bus-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.quick-bus-item:last-child {
+  border-bottom: none;
+}
+
+.quick-bus-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bus-vendor {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-variant);
+}
+
+.bus-time {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.quick-bus-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.more-buses-hint {
+  text-align: center;
+  padding: 8px;
+  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-container {
+    padding: 20px 16px;
+  }
+
+  .search-page-title {
+    font-size: 1.8rem;
+  }
+
+  .search-filters {
+    padding: 20px;
+  }
+
+  .filter-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .btn-search {
+    grid-column: span 1;
+  }
+
+  .bus-types-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .bus-type-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vendor-tags {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-page-title {
+    font-size: 1.5rem;
+  }
+
+  .bus-type-name {
+    font-size: 1.3rem;
+  }
+
+  .price-range {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   BUS DETAILS PAGE STYLES
+   ============================================ */
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 0.9rem;
+}
+
+.breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+  color: var(--primary-variant);
+  text-decoration: underline;
+}
+
+.breadcrumb .separator {
+  color: var(--muted);
+}
+
+.breadcrumb .current {
+  color: var(--primary-variant);
+  font-weight: 600;
+}
+
+/* Bus Details Header */
+.bus-details-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.bus-details-header .subtitle,
+.subtitle {
+  color: #666;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Type Controls */
+.type-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.type-controls .btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.type-controls .btn-secondary:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Bus Types Sections */
+.bus-types-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.bus-type-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.type-header {
+  background: var(--primary);
+  color: white;
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.type-header:hover {
+  background: #256527;
+}
+
+.type-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.type-name {
+  font-size: 1.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.type-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.toggle-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Sort Controls */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.sort-controls label {
+  font-weight: 600;
+  color: var(--primary-variant);
+  margin-right: 8px;
+}
+
+.sort-btn {
+  padding: 8px 20px;
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #555;
+}
+
+.sort-btn:hover {
+  background: #e8e8e8;
+  border-color: var(--primary);
+}
+
+.sort-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Bus Details List */
+.bus-details-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .bus-details-list {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+}
+
+/* Bus Details Card */
+.bus-detail-card {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  background: white;
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+
+.bus-detail-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+}
+
+/* Bus Card Image */
+.bus-card-image {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  height: 200px;
+}
+
+.bus-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bus-type-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(46, 125, 50, 0.95);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+/* Bus Card Content */
+.bus-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bus-vendor-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vendor-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-variant);
+  margin: 0;
+}
+
+.bus-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff8e1;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.rating-star {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.rating-value {
+  font-weight: 700;
+  color: #333;
+}
+
+.bus-number {
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* Route & Time */
+.bus-route-time {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  border-radius: 8px;
+}
+
+.route-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.route-info .city {
+  color: var(--primary-variant);
+}
+
+.route-info .arrow {
+  color: var(--accent);
+  font-size: 1.3rem;
+}
+
+.time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  color: #555;
+}
+
+.time-info .time {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.time-info .separator {
+  color: var(--muted);
+}
+
+/* Amenities */
+.bus-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.amenity-badge {
+  background: var(--primary);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Bottom Info */
+.bus-bottom-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-top: auto;
+}
+
+.seats-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seats-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.seats-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.price-info .price {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.price-info .price-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Book Button */
+.btn-book {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--primary) 0%, #1b5e20 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.btn-book:hover {
+  background: linear-gradient(135deg, #1b5e20 0%, var(--primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+}
+
+/* Back Button Section */
+.back-to-search {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.btn-secondary {
+  display: inline-block;
+  padding: 12px 32px;
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* Error Container Buttons */
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.error-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.error-container h3 {
+  font-size: 1.8rem;
+  margin: 0 0 12px;
+  color: #d32f2f;
+}
+
+.error-container p {
+  margin: 0 0 24px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.btn-retry {
+  display: inline-block;
+  padding: 12px 32px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 12px;
+}
+
+.btn-retry:hover {
+  background: var(--primary-variant);
+  transform: translateY(-2px);
+}
+
+.btn-back {
+  display: inline-block;
+  padding: 12px 32px;
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-back:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* Responsive Design for Bus Details */
+@media (max-width: 1024px) {
+  .bus-detail-card {
+    grid-template-columns: 250px 1fr;
+    gap: 20px;
+  }
+
+  .bus-card-image {
+    height: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sort-controls {
+    padding: 12px 16px;
+  }
+
+  .sort-btn {
+    font-size: 0.85rem;
+    padding: 6px 14px;
+  }
+
+  .bus-detail-card {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .bus-card-image {
+    height: 220px;
+  }
+
+  .bus-route-time {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .bus-bottom-info {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .price-info {
+    align-items: flex-start;
+  }
+
+  .vendor-name {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .breadcrumb {
+    font-size: 0.8rem;
+  }
+
+  .sort-controls {
+    gap: 8px;
+  }
+
+  .sort-controls label {
+    width: 100%;
+  }
+
+  .bus-details-header .subtitle {
+    font-size: 0.95rem;
+  }
+
+  .route-info {
+    font-size: 1rem;
+  }
+
+  .price-info .price {
+    font-size: 1.5rem;
+  }
+
+  .btn-book {
+    font-size: 1rem;
+    padding: 12px 20px;
+  }
 }

@@ -374,7 +374,7 @@
 
 .amenity-tag.more {
   background: var(--accent, #f9a825);
-  color: white;
+  color: rgb(40, 40, 40);
   border-color: var(--accent, #f9a825);
 }
 
@@ -399,7 +399,7 @@
 
 .status.inactive {
   background: #feeaea;
-  color: #c33;
+  color: rgb(100, 100, 100);
 }
 
 .no-buses {

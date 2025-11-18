@@ -275,10 +275,11 @@ async def list_vendors_with_buses(
     where_clause = " AND ".join(conditions) if conditions else "1=1"
     
     # Get total count
-    total = await database.fetch_val(
-        f"SELECT COUNT(*) FROM vendors v WHERE {where_clause}",
+    count_result = await database.fetch_one(
+        f"SELECT COUNT(*) as total FROM vendors v WHERE {where_clause}",
         *params
     )
+    total = count_result['total'] if count_result else 0
     
     # Get vendors
     list_params = params + [limit, offset]
@@ -412,10 +413,11 @@ async def list_vendors(
     where_clause = " AND ".join(conditions) if conditions else "1=1"
     
     # Get total count
-    total = await database.fetch_val(
-        f"SELECT COUNT(*) FROM vendors v WHERE {where_clause}",
+    count_result = await database.fetch_one(
+        f"SELECT COUNT(*) as total FROM vendors v WHERE {where_clause}",
         *params
     )
+    total = count_result['total'] if count_result else 0
     
     # Get vendors
     params.extend([limit, skip])

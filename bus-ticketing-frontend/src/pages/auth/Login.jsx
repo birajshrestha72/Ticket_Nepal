@@ -81,11 +81,11 @@ const Login = () => {
       
       // Redirect based on role from database: 'customer', 'vendor', 'system_admin'
       if (user.role === 'system_admin') {
-        navigate('/superadmin');
+        navigate('/superadmindashboard');
       } else if (user.role === 'vendor') {
-        navigate('/vendor');
+        navigate('/vendordashboard');
       } else if (user.role === 'customer') {
-        navigate('/customer');
+        navigate('/customerdashboard');
       } else {
         // Default fallback
         navigate('/');
