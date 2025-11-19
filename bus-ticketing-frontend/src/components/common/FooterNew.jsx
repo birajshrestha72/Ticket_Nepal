@@ -94,7 +94,7 @@ const FooterNew = () => {
             <div className="payment-icons">
               <span className="payment-badge">eSewa</span>
               <span className="payment-badge">Khalti</span>
-              <span className="payment-badge">Bank Transfer</span>
+            
             </div>
           </div>
         </div>

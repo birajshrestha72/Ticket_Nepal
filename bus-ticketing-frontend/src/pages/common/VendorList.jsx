@@ -13,6 +13,7 @@ const VendorList = () => {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedVendors, setExpandedVendors] = useState(new Set()); // Track expanded vendors
   const [pagination, setPagination] = useState({
     current_page: 1,
     total_pages: 1,
@@ -99,6 +100,33 @@ const VendorList = () => {
       province: '',
       verified_only: false
     });
+  };
+
+  /**
+   * Toggle vendor expansion
+   */
+  const toggleVendor = (vendorId) => {
+    const newExpanded = new Set(expandedVendors);
+    if (newExpanded.has(vendorId)) {
+      newExpanded.delete(vendorId);
+    } else {
+      newExpanded.add(vendorId);
+    }
+    setExpandedVendors(newExpanded);
+  };
+
+  /**
+   * Expand all vendors
+   */
+  const expandAll = () => {
+    setExpandedVendors(new Set(vendors.map(v => v.vendor_id)));
+  };
+
+  /**
+   * Collapse all vendors
+   */
+  const collapseAll = () => {
+    setExpandedVendors(new Set());
   };
 
   /**
@@ -190,6 +218,18 @@ const VendorList = () => {
           </div>
         )}
 
+        {/* Expand/Collapse Controls */}
+        {vendors.length > 0 && (
+          <div className="vendor-controls">
+            <button onClick={expandAll} className="btn-control">
+              Expand All
+            </button>
+            <button onClick={collapseAll} className="btn-control">
+              Collapse All
+            </button>
+          </div>
+        )}
+
         {/* Results Summary */}
         <div className="results-summary">
           <p>
@@ -213,7 +253,7 @@ const VendorList = () => {
             {vendors.map((vendor) => (
               <div key={vendor.vendor_id} className="vendor-card">
                 {/* Vendor Header */}
-                <div className="vendor-header">
+                <div className="vendor-header" onClick={() => toggleVendor(vendor.vendor_id)} style={{ cursor: 'pointer' }}>
                   <div className="vendor-info">
                     <h2 className="vendor-name">
                       {vendor.company_name}
@@ -241,13 +281,16 @@ const VendorList = () => {
                     <p>📞 {vendor.contact_phone}</p>
                     <p>✉️ {vendor.contact_email}</p>
                   </div>
+                  <button className="toggle-vendor-btn" onClick={(e) => { e.stopPropagation(); toggleVendor(vendor.vendor_id); }}>
+                    {expandedVendors.has(vendor.vendor_id) ? '▼' : '▶'}
+                  </button>
                 </div>
 
-                {/* Buses List */}
-                {vendor.buses && vendor.buses.length > 0 && (
+                {/* Buses List - Only show when expanded */}
+                {expandedVendors.has(vendor.vendor_id) && vendor.buses && vendor.buses.length > 0 && (
                   <div className="buses-section">
-                    <h3 className="buses-title">Available Buses</h3>
-                    <div className="buses-grid">
+                    <h3 className="buses-title">Available Buses ({vendor.buses.length})</h3>
+                    <div className="buses-horizontal-scroll">
                       {vendor.buses.map((bus) => (
                         <div key={bus.bus_id} className="bus-card">
                           {/* Bus Image */}
@@ -310,7 +353,7 @@ const VendorList = () => {
                 )}
 
                 {/* No Buses */}
-                {(!vendor.buses || vendor.buses.length === 0) && (
+                {expandedVendors.has(vendor.vendor_id) && (!vendor.buses || vendor.buses.length === 0) && (
                   <div className="no-buses">
                     <p>No buses available at the moment</p>
                   </div>

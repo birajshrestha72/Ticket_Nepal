@@ -158,6 +158,15 @@ app.include_router(
     tags=["Bookings"]
 )
 
+# Import reviews router
+from app.api.routes import reviews
+
+app.include_router(
+    reviews.router,
+    prefix=f"{settings.API_PREFIX}/reviews",
+    tags=["Reviews"]
+)
+
 
 if __name__ == "__main__":
     import uvicorn

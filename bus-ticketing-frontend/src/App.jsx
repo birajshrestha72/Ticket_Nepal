@@ -19,19 +19,18 @@ import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import VendorSignup from './pages/auth/VendorSignup.jsx';
 
-// user
-import Profile from './pages/user/Profile.jsx';
-import MyBookings from './pages/user/MyBookings.jsx';
-import BookingSuccess from './pages/user/BookingSuccess.jsx';
-
-// customer
+// customer (merged user folder into customer)
 import CustomerDashboard from './pages/customer/CustomerDashboard.jsx';
+import MyBookings from './pages/customer/MyBookings.jsx';
+import BookingSuccess from './pages/customer/BookingSuccess.jsx';
+import Booking from './pages/customer/Booking.jsx';
+import BookingBill from './pages/customer/BookingBill.jsx';
+import Payment from './pages/customer/Payment.jsx';
+import ReviewNotification from './pages/customer/ReviewNotification.jsx';
 
-// vendor
-import VendorDashboard from './pages/vendor/VendorDashboard.jsx';
-import VendorBuses from './pages/vendor/VendorBuses.jsx';
-
-// admin
+// admin (merged vendor folder - handles both vendor and admin operations)
+import VendorDashboard from './pages/admin/VendorDashboard.jsx';
+import VendorBuses from './pages/admin/VendorBuses.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminBuses from './pages/admin/AdminBuses.jsx';
 
@@ -65,14 +64,32 @@ const App = () => {
               element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>}
             />
 
-            {/* User protected routes - accessible by all authenticated users */}
+            {/* Customer booking flow - accessible by authenticated customers */}
             <Route
-              path="/profile"
-              element={<ProtectedRoute allowedRoles={["customer", "vendor", "system_admin"]}><Profile /></ProtectedRoute>}
+              path="/booking"
+              element={<ProtectedRoute allowedRoles={["customer"]}><Booking /></ProtectedRoute>}
             />
+            <Route
+              path="/booking-bill"
+              element={<ProtectedRoute allowedRoles={["customer"]}><BookingBill /></ProtectedRoute>}
+            />
+            <Route
+              path="/payment"
+              element={<ProtectedRoute allowedRoles={["customer"]}><Payment /></ProtectedRoute>}
+            />
+            <Route
+              path="/booking-success"
+              element={<ProtectedRoute allowedRoles={["customer"]}><BookingSuccess /></ProtectedRoute>}
+            />
+
+            {/* Customer bookings and reviews */}
             <Route
               path="/bookings"
               element={<ProtectedRoute allowedRoles={["customer"]}><MyBookings /></ProtectedRoute>}
+            />
+            <Route
+              path="/review-notification"
+              element={<ProtectedRoute allowedRoles={["customer"]}><ReviewNotification /></ProtectedRoute>}
             />
 
             {/* Vendor routes - role='vendor' from database */}

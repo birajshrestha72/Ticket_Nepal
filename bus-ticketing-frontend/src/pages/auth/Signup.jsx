@@ -188,7 +188,7 @@ const Signup = () => {
         <div className="auth-card">
           {/* Header */}
           <div className="auth-header">
-            <div className="auth-logo">🎫</div>
+  
             <h1 className="auth-title">Create Account</h1>
             <p className="auth-subtitle">Join Ticket Nepal for seamless bus booking</p>
           </div>

@@ -44,18 +44,26 @@ const HeaderNew = () => {
 
         {/* Navigation links - Desktop ma right aligned, mobile ma dropdown */}
         <nav className={`header-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-                      <Link to="/" className="nav-link">Home</Link>
+          <Link to="/" className="nav-link">Home</Link>
           <Link to="/vendors" className="nav-link">Vendors</Link>
           <Link to="/bus-details" className="nav-link">Bus Details</Link>
-          <Link to="/search" className="nav-link">Search Bus</Link>
           <Link to="/destinations" className="nav-link">Destinations</Link>
 
-            {/* User profile section - Login status depending */}
+          {/* User profile section - Login status depending */}
           <div className="nav-profile">
             {user ? (
               // Logged in user - Profile dropdown
               <>
-                <Link to="/profile" className="profile-link" onClick={() => setMobileMenuOpen(false)}>
+                <Link 
+                  to={
+                    user.role === 'customer' ? '/customer' :
+                    user.role === 'vendor' ? '/vendor' :
+                    user.role === 'system_admin' ? '/superadmin' :
+                    '/customer'
+                  } 
+                  className="profile-link" 
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   <span className="profile-icon">👤</span>
                   <span className="profile-name">{user.name || user.role}</span>
                 </Link>

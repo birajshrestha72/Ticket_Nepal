@@ -9,11 +9,11 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
  * Fetches complete bus inventory from database
  * Organized by bus_type with all vendor buses displayed
  */
-const BusDetails = () => {
+const BusDetails = () => { //state management variables
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busesByType, setBusesByType] = useState({});
-  const [expandedTypes, setExpandedTypes] = useState(new Set());
+  const [expandedTypes, setExpandedTypes] = useState(new Set()); // list expanded when user clicks
 
   useEffect(() => {
     fetchAllBuses();
@@ -34,8 +34,8 @@ const BusDetails = () => {
       
       if (data.status === 'success') {
         setBusesByType(data.data.busesByType || {});
-        // Expand all types by default
-        setExpandedTypes(new Set(Object.keys(data.data.busesByType || {})));
+        // Start collapsed - don't expand any types by default
+        setExpandedTypes(new Set());
       } else {
         throw new Error(data.message || 'Failed to fetch buses');
       }
@@ -133,9 +133,7 @@ const BusDetails = () => {
                 <div key={busType} className="bus-type-section">
                   {/* Type Header */}
                   <div 
-                    className="type-header"
-                    onClick={() => toggleType(busType)}
-                  >
+                    className="type-header"onClick={() => toggleType(busType)}>
                     <div className="type-info">
                       <h2 className="type-name">{busType}</h2>
                       <span className="type-count">{buses.length} buses</span>

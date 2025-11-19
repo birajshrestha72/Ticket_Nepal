@@ -81,13 +81,12 @@ const Login = () => {
       
       // Redirect based on role from database: 'customer', 'vendor', 'system_admin'
       if (user.role === 'system_admin') {
-        navigate('/superadmindashboard');
+        navigate('/superadmin/dashboard');
       } else if (user.role === 'vendor') {
-        navigate('/vendordashboard');
+        navigate('/vendor/dashboard');
       } else if (user.role === 'customer') {
-        navigate('/customerdashboard');
+        navigate('/customer/dashboard');
       } else {
-        // Default fallback
         navigate('/');
       }
 
@@ -140,11 +139,11 @@ const Login = () => {
       
       // Redirect based on role
       if (userData.role === 'system_admin') {
-        navigate('/superadmin');
+        navigate('/superadmindashboard');
       } else if (userData.role === 'vendor') {
-        navigate('/vendor');
+        navigate('/vendordashboard');
       } else if (userData.role === 'customer') {
-        navigate('/customer');
+        navigate('/customerdashboard');
       } else {
         navigate('/');
       }
@@ -284,10 +283,10 @@ const Login = () => {
         <div className="auth-info">
           <h3>🚌 Welcome to Ticket Nepal</h3>
           <ul>
-            <li>✅ Instant bus booking</li>
-            <li>✅ Secure payments</li>
-            <li>✅ 24/7 customer support</li>
-            <li>✅ Best fares guaranteed</li>
+            <li> Instant bus booking</li>
+            <li> Secure payments</li>
+            <li> 24/7 customer support</li>
+            <li> Best fares guaranteed</li>
           </ul>
         </div>
       </div>
