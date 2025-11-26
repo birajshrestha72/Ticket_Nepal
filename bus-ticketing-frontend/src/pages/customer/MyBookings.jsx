@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../../css/customerDashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const MyBookings = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState('all'); // all, upcoming, completed, cancelled
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [cancelDetails, setCancelDetails] = useState(null);
 
   useEffect(() => {
     fetchBookings();
@@ -17,23 +21,120 @@ const MyBookings = () => {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/bookings/my-bookings`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+        return;
+      }
       
       if (!response.ok) throw new Error('Failed to fetch bookings');
       
       const data = await response.json();
       if (data.status === 'success') {
         setBookings(data.data.bookings || []);
+      } else {
+        setError(data.message || 'Failed to fetch bookings');
       }
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching bookings:', err);
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  // Calculate refund amount based on cancellation time
+  const calculateRefund = (journeyDate, totalAmount) => {
+    const journey = new Date(journeyDate);
+    const now = new Date();
+    const hoursUntilJourney = (journey - now) / (1000 * 60 * 60);
+    
+    if (hoursUntilJourney >= 48) {
+      // 48 hours or more: 90% refund
+      return {
+        percentage: 90,
+        amount: totalAmount * 0.9,
+        message: '90% refund (48+ hours before journey)'
+      };
+    } else if (hoursUntilJourney >= 12) {
+      // 12-48 hours: 25% refund
+      return {
+        percentage: 25,
+        amount: totalAmount * 0.25,
+        message: '25% refund (12-48 hours before journey)'
+      };
+    } else {
+      // Less than 12 hours: No refund
+      return {
+        percentage: 0,
+        amount: 0,
+        message: 'No refund (less than 12 hours before journey)'
+      };
+    }
+  };
+
+  const handleCancelClick = (booking) => {
+    const refund = calculateRefund(booking.journeyDate, parseFloat(booking.totalAmount));
+    setSelectedBooking(booking);
+    setCancelDetails(refund);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancellation = async () => {
+    if (!selectedBooking) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${API_URL}/bookings/${selectedBooking.id}/cancel`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        alert(`Booking cancelled successfully! Refund: Rs. ${cancelDetails.amount.toLocaleString()}`);
+        setShowCancelModal(false);
+        setSelectedBooking(null);
+        setCancelDetails(null);
+        fetchBookings(); // Refresh bookings list
+      } else {
+        alert(`Error: ${data.message || 'Failed to cancel booking'}`);
+      }
+    } catch (err) {
+      console.error('Error cancelling booking:', err);
+      alert('Failed to cancel booking. Please try again.');
+    }
+  };
+
+  const canCancelBooking = (booking) => {
+    if (booking.bookingStatus !== 'confirmed') return false;
+    
+    const journey = new Date(booking.journeyDate);
+    const now = new Date();
+    const hoursUntilJourney = (journey - now) / (1000 * 60 * 60);
+    
+    return hoursUntilJourney >= 12; // Can cancel if 12+ hours before journey
   };
 
   const getFilteredBookings = () => {
@@ -183,13 +284,91 @@ const MyBookings = () => {
                     View Details
                   </button>
                   {booking.bookingStatus === 'confirmed' && (
-                    <button className="btn-primary btn-sm">
-                      Download Ticket
-                    </button>
+                    <>
+                      <button className="btn-primary btn-sm">
+                        Download Ticket
+                      </button>
+                      {canCancelBooking(booking) && (
+                        <button 
+                          className="btn-danger btn-sm"
+                          onClick={() => handleCancelClick(booking)}
+                        >
+                          Cancel Booking
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Cancellation Modal */}
+        {showCancelModal && selectedBooking && cancelDetails && (
+          <div className="modal-overlay" onClick={() => setShowCancelModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Cancel Booking</h2>
+                <button className="close-modal" onClick={() => setShowCancelModal(false)}>×</button>
+              </div>
+              <div className="modal-body">
+                <div className="cancel-warning">
+                  <span className="warning-icon">⚠️</span>
+                  <p>Are you sure you want to cancel this booking?</p>
+                </div>
+                
+                <div className="booking-summary">
+                  <h3>Booking Details</h3>
+                  <div className="detail-row">
+                    <span>Booking Reference:</span>
+                    <strong>{selectedBooking.bookingReference}</strong>
+                  </div>
+                  <div className="detail-row">
+                    <span>Route:</span>
+                    <strong>{selectedBooking.pickupPoint} → {selectedBooking.dropPoint}</strong>
+                  </div>
+                  <div className="detail-row">
+                    <span>Journey Date:</span>
+                    <strong>{formatDate(selectedBooking.journeyDate)}</strong>
+                  </div>
+                  <div className="detail-row">
+                    <span>Total Amount:</span>
+                    <strong>Rs. {parseFloat(selectedBooking.totalAmount).toLocaleString()}</strong>
+                  </div>
+                </div>
+
+                <div className="refund-info">
+                  <h3>Refund Information</h3>
+                  <div className="refund-details">
+                    <div className="refund-percentage">
+                      {cancelDetails.percentage}% Refund
+                    </div>
+                    <div className="refund-amount">
+                      Rs. {cancelDetails.amount.toLocaleString()}
+                    </div>
+                    <div className="refund-message">
+                      {cancelDetails.message}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    className="btn-secondary"
+                    onClick={() => setShowCancelModal(false)}
+                  >
+                    Keep Booking
+                  </button>
+                  <button 
+                    className="btn-danger"
+                    onClick={confirmCancellation}
+                  >
+                    Confirm Cancellation
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

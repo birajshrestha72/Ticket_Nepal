@@ -167,6 +167,33 @@ app.include_router(
     tags=["Reviews"]
 )
 
+# Import routes router (bus routes management)
+from app.api.routes import routes
+
+app.include_router(
+    routes.router,
+    prefix=f"{settings.API_PREFIX}/routes",
+    tags=["Routes"]
+)
+
+# Import schedules router
+from app.api.routes import schedules
+
+app.include_router(
+    schedules.router,
+    prefix=f"{settings.API_PREFIX}/schedules",
+    tags=["Schedules"]
+)
+
+# Import stats router
+from app.api.routes import stats
+
+app.include_router(
+    stats.router,
+    prefix=f"{settings.API_PREFIX}/stats",
+    tags=["Statistics"]
+)
+
 
 if __name__ == "__main__":
     import uvicorn

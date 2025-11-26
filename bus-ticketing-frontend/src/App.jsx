@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import PublicRoute from './components/PublicRoute.jsx';
 import Header from './components/common/Header.jsx';
 import Footer from './components/common/Footer.jsx';
 
@@ -33,6 +34,11 @@ import VendorDashboard from './pages/admin/VendorDashboard.jsx';
 import VendorBuses from './pages/admin/VendorBuses.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminBuses from './pages/admin/AdminBuses.jsx';
+import AdminRoutes from './pages/admin/AdminRoutes.jsx';
+import AdminSchedules from './pages/admin/AdminSchedules.jsx';
+import VendorBookings from './pages/admin/VendorBookings.jsx';
+import Billing from './pages/admin/Billing.jsx';
+import RatingsReviews from './pages/admin/RatingsReviews.jsx';
 
 // superadmin
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard.jsx';
@@ -54,9 +60,9 @@ const App = () => {
             <Route path="/vendors" element={<VendorList />} />
             <Route path="/destinations" element={<Destinations />} />
 
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/vendor-signup" element={<VendorSignup />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+            <Route path="/vendor-signup" element={<PublicRoute><VendorSignup /></PublicRoute>} />
 
             {/* Customer dashboard - role='customer' from database */}
             <Route
@@ -110,6 +116,48 @@ const App = () => {
             <Route
               path="/admin/buses"
               element={<ProtectedRoute allowedRoles={["system_admin"]}><AdminBuses /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/routes"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><AdminRoutes /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/schedules"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><AdminSchedules /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/bookings"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><VendorBookings /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/billing"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><Billing /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/ratings"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><RatingsReviews /></ProtectedRoute>}
+            />
+            
+            {/* Vendor specific routes */}
+            <Route
+              path="/vendor/routes"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><AdminRoutes /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/schedules"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><AdminSchedules /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/bookings"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><VendorBookings /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/billing"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><Billing /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/ratings"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><RatingsReviews /></ProtectedRoute>}
             />
 
             {/* Superadmin - role='system_admin' from database */}

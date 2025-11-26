@@ -26,7 +26,8 @@ INSERT INTO users (name, email, phone, password_hash, role, auth_provider, is_ac
 ('Anjali Tamang', 'anjali@gmail.com', '9851111112', '$2a$10$X8qJ5vZ9xKQe.HJwx4WmYeKpVU0b8JZlZ9YqC6WnZJY9xKQe.HJwx', 'customer', 'email', true, true),
 ('Prakash Shrestha', 'prakash@gmail.com', '9851111113', '$2a$10$X8qJ5vZ9xKQe.HJwx4WmYeKpVU0b8JZlZ9YqC6WnZJY9xKQe.HJwx', 'customer', 'email', true, true),
 ('Sunita Rai', 'sunita@gmail.com', '9851111114', '$2a$10$X8qJ5vZ9xKQe.HJwx4WmYeKpVU0b8JZlZ9YqC6WnZJY9xKQe.HJwx', 'customer', 'email', true, true),
-('Rajesh Karki', 'rajesh@gmail.com', '9851111115', '$2a$10$X8qJ5vZ9xKQe.HJwx4WmYeKpVU0b8JZlZ9YqC6WnZJY9xKQe.HJwx', 'customer', 'email', true, true);
+('Rajesh Karki', 'rajesh@gmail.com', '9851111115', '$2a$10$X8qJ5vZ9xKQe.HJwx4WmYeKpVU0b8JZlZ9YqC6WnZJY9xKQe.HJwx', 'customer', 'email', true, true)
+ON CONFLICT (email) DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: VENDORS (3 Bus Companies)
@@ -220,35 +221,35 @@ INSERT INTO audit_logs (user_id, action, table_name, record_id, old_values, new_
 -- Display summary
 SELECT 'SEED DATA SUMMARY:' as info;
 
-SELECT 'Table' as table_name, 'Count' as record_count
-UNION ALL
-SELECT 'Users', COUNT(*)::text FROM users
-UNION ALL
-SELECT 'Vendors', COUNT(*)::text FROM vendors
-UNION ALL
-SELECT 'Vendor Documents', COUNT(*)::text FROM vendor_documents
-UNION ALL
-SELECT 'Routes', COUNT(*)::text FROM routes
-UNION ALL
-SELECT 'Buses', COUNT(*)::text FROM buses
-UNION ALL
-SELECT 'Bus Schedules', COUNT(*)::text FROM bus_schedules
-UNION ALL
-SELECT 'Bookings', COUNT(*)::text FROM bookings
-UNION ALL
-SELECT 'Payments', COUNT(*)::text FROM payments
-UNION ALL
-SELECT 'Tickets', COUNT(*)::text FROM tickets
-UNION ALL
-SELECT 'Refunds', COUNT(*)::text FROM refunds
-UNION ALL
-SELECT 'Reviews', COUNT(*)::text FROM reviews
-UNION ALL
-SELECT 'Notifications', COUNT(*)::text FROM notifications
-UNION ALL
-SELECT 'System Settings', COUNT(*)::text FROM system_settings
-UNION ALL
-SELECT 'Audit Logs', COUNT(*)::text FROM audit_logs;
+SELECT table_name, record_count FROM (
+  SELECT 'Users' as table_name, COUNT(*)::text as record_count FROM users
+  UNION ALL
+  SELECT 'Vendors', COUNT(*)::text FROM vendors
+  UNION ALL
+  SELECT 'Vendor Documents', COUNT(*)::text FROM vendor_documents
+  UNION ALL
+  SELECT 'Routes', COUNT(*)::text FROM routes
+  UNION ALL
+  SELECT 'Buses', COUNT(*)::text FROM buses
+  UNION ALL
+  SELECT 'Bus Schedules', COUNT(*)::text FROM bus_schedules
+  UNION ALL
+  SELECT 'Bookings', COUNT(*)::text FROM bookings
+  UNION ALL
+  SELECT 'Payments', COUNT(*)::text FROM payments
+  UNION ALL
+  SELECT 'Tickets', COUNT(*)::text FROM tickets
+  UNION ALL
+  SELECT 'Refunds', COUNT(*)::text FROM refunds
+  UNION ALL
+  SELECT 'Reviews', COUNT(*)::text FROM reviews
+  UNION ALL
+  SELECT 'Notifications', COUNT(*)::text FROM notifications
+  UNION ALL
+  SELECT 'System Settings', COUNT(*)::text FROM system_settings
+  UNION ALL
+  SELECT 'Audit Logs', COUNT(*)::text FROM audit_logs
+) summary;
 
 -- Show users by role
 SELECT 'USERS BY ROLE:' as info;
@@ -256,13 +257,11 @@ SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY role;
 
 -- Show active schedules
 SELECT 'ACTIVE SCHEDULES (Sample):' as info;
-SELECT * FROM active_schedules LIMIT 5;
+-- SELECT * FROM active_schedules LIMIT 5;
 
 -- Show vendor analytics
 SELECT 'VENDOR ANALYTICS:' as info;
-SELECT * FROM vendor_analytics;
-
-COMMIT;
+-- SELECT * FROM vendor_analytics;
 
 -- ============================================================================
 -- SUCCESS MESSAGE

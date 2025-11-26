@@ -38,54 +38,54 @@ const Landing = () => {
    * Database query: active_schedules view ra vendor_analytics view use garcha
    */
   const fetchHomePageData = async () => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+    
     try {
       setLoading(true);
       
-      // Backend API endpoints - yesto structure huncha final ma
-      // const routesRes = await fetch('/api/routes/popular');
-      // const vendorsRes = await fetch('/api/vendors/featured');
-      // const statsRes = await fetch('/api/stats/summary');
+      // Fetch all data in parallel for better performance
+      const [statsRes, routesRes, vendorsRes, citiesRes] = await Promise.all([
+        fetch(`${API_URL}/stats/summary`),
+        fetch(`${API_URL}/stats/popular-routes?limit=6`),
+        fetch(`${API_URL}/stats/featured-vendors?limit=6`),
+        fetch(`${API_URL}/routes/cities`)
+      ]);
       
-      // Temporary mock data - Backend tayar bhaye pachi replace garne
-      // Database schema sanga match gareko cha (routes, vendors, bus_schedules tables)
-      setTimeout(() => {
-        // Available cities - destinations page ko cities + major tourist destinations
-        const allCities = [
-          'Kathmandu', 'Pokhara', 'Chitwan', 'Lumbini', 'Biratnagar', 'Butwal',
-          'Bharatpur', 'Birgunj', 'Dharan', 'Hetauda', 'Janakpur', 'Nepalgunj',
-          'Bhairahawa', 'Dhangadhi', 'Itahari', 'Tulsipur', 'Ghorahi', 'Damak',
-          'Mustang', 'Dolpa', 'Manang', 'Solukhumbu', 'Rasuwa', 'Mugu',
-          'Kaski', 'Rupandehi', 'Dhanusha', 'Bardiya'
-        ];
-        setCities(allCities.sort());
-
-        // Popular routes - routes table ra bus_schedules join garera data
-        setPopularRoutes([
-          { id: 1, origin: 'Kathmandu', destination: 'Pokhara', distance_km: 200, base_price: 1200, available_schedules: 15 },
-          { id: 2, origin: 'Kathmandu', destination: 'Chitwan', distance_km: 150, base_price: 1000, available_schedules: 12 },
-          { id: 3, origin: 'Pokhara', destination: 'Biratnagar', distance_km: 350, base_price: 1500, available_schedules: 8 },
-          { id: 4, origin: 'Butwal', destination: 'Kathmandu', distance_km: 265, base_price: 1300, available_schedules: 10 }
-        ]);
-
-        // Featured vendors - vendors table bata verified vendors
-        setFeaturedVendors([
-          { id: 1, company_name: 'ABC Travels', verified: true, average_rating: 4.5, total_buses: 25 },
-          { id: 2, company_name: 'XYZ Bus Service', verified: true, average_rating: 4.2, total_buses: 18 },
-          { id: 3, company_name: 'Nepal Yatayat', verified: true, average_rating: 4.7, total_buses: 30 },
-          { id: 4, company_name: 'Deluxe Express', verified: true, average_rating: 4.3, total_buses: 20 }
-        ]);
-
-        // System statistics - aggregated counts
+      // Parse responses
+      const statsData = await statsRes.json();
+      const routesData = await routesRes.json();
+      const vendorsData = await vendorsRes.json();
+      const citiesData = await citiesRes.json();
+      
+      // Update state with real data from database
+      if (statsData.status === 'success') {
         setStats({
-          totalBuses: 150,      // Total active buses
-          totalRoutes: 45,      // Total available routes
-          totalBookings: 25000  // Total bookings completed
+          totalBuses: statsData.data.stats.totalBuses,
+          totalRoutes: statsData.data.stats.totalRoutes,
+          totalBookings: statsData.data.stats.totalBookings
         });
-
-        setLoading(false);
-      }, 500);
+      }
+      
+      if (routesData.status === 'success') {
+        setPopularRoutes(routesData.data.routes);
+      }
+      
+      if (vendorsData.status === 'success') {
+        setFeaturedVendors(vendorsData.data.vendors);
+      }
+      
+      if (citiesData.status === 'success') {
+        setCities(citiesData.data.cities);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Data fetch garda error:', error);
+      // Set fallback empty data on error
+      setStats({ totalBuses: 0, totalRoutes: 0, totalBookings: 0 });
+      setPopularRoutes([]);
+      setFeaturedVendors([]);
+      setCities([]);
       setLoading(false);
     }
   };
@@ -278,17 +278,17 @@ const Landing = () => {
                 {/* Distance in kilometers */}
                 <div className="detail-item">
                   <span className="label">Duri (Distance):</span>
-                  <span className="value">{route.distance_km} km</span>
+                  <span className="value">{route.distanceKm} km</span>
                 </div>
                 {/* Starting price */}
                 <div className="detail-item">
                   <span className="label">Mulya (Price):</span>
-                  <span className="value price">Rs. {route.base_price}</span>
+                  <span className="value price">Rs. {Math.round(route.avgPrice)}</span>
                 </div>
                 {/* Available schedules count */}
                 <div className="detail-item">
                   <span className="label">Uplabdha (Available):</span>
-                  <span className="value">{route.available_schedules} schedules</span>
+                  <span className="value">{route.availableSchedules} schedules</span>
                 </div>
               </div>
               {/* CTA - Search page ma redirect with pre-filled params */}
@@ -312,17 +312,17 @@ const Landing = () => {
           {featuredVendors.map((vendor) => (
             <div key={vendor.id} className="vendor-card card">
               <div className="vendor-header">
-                <h3 className="vendor-name">{vendor.company_name}</h3>
+                <h3 className="vendor-name">{vendor.companyName}</h3>
                 {vendor.verified && <span className="verified-badge">✓ Verified</span>}
               </div>
               <div className="vendor-stats">
                 <div className="stat-item">
                   <span className="stat-icon">⭐</span>
-                  <span className="stat-value">{vendor.average_rating.toFixed(1)}</span>
+                  <span className="stat-value">{vendor.averageRating.toFixed(1)}</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-icon">🚌</span>
-                  <span className="stat-value">{vendor.total_buses} buses</span>
+                  <span className="stat-value">{vendor.totalBuses} buses</span>
                 </div>
               </div>
             </div>

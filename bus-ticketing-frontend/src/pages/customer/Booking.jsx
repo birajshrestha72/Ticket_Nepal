@@ -1,23 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import '../../css/booking.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const Booking = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   
-  const busId = searchParams.get('busId');
-  const scheduleId = searchParams.get('scheduleId');
+  // Get data from URL params or location state
+  const busIdParam = searchParams.get('busId');
+  const scheduleIdParam = searchParams.get('scheduleId');
+  const schedulesFromSearch = location.state?.schedules || [];
+  const searchCriteria = location.state?.searchCriteria || {};
   
   // State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [busDetails, setBusDetails] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [bookedSeats, setBookedSeats] = useState([]);
-  const [journeyDate, setJourneyDate] = useState(new Date().toISOString().split('T')[0]);
+  const [journeyDate, setJourneyDate] = useState(
+    searchCriteria.date || new Date().toISOString().split('T')[0]
+  );
   const [passengerDetails, setPassengerDetails] = useState({
     name: '',
     phone: '',
@@ -28,15 +35,28 @@ const Booking = () => {
   });
 
   useEffect(() => {
-    if (busId) {
-      fetchBusDetails();
+    // Handle direct access with URL params
+    if (busIdParam && scheduleIdParam) {
+      setSelectedSchedule({ busId: busIdParam, scheduleId: scheduleIdParam });
+    }
+    // Handle access from search page with schedules
+    else if (schedulesFromSearch.length > 0) {
+      setSelectedSchedule(schedulesFromSearch[0]); // Auto-select first schedule
+      setLoading(false);
     } else {
-      setError('No bus selected');
+      setError('Missing bus or schedule information');
       setLoading(false);
     }
-  }, [busId]);
+  }, [busIdParam, scheduleIdParam, schedulesFromSearch]);
 
-  const fetchBusDetails = async () => {
+  useEffect(() => {
+    if (selectedSchedule) {
+      fetchBusDetails(selectedSchedule.busId);
+      fetchSeatAvailability(selectedSchedule.scheduleId);
+    }
+  }, [selectedSchedule, journeyDate]);
+
+  const fetchBusDetails = async (busId) => {
     try {
       const response = await fetch(`${API_URL}/buses/${busId}`);
       if (!response.ok) throw new Error('Failed to fetch bus details');
@@ -44,8 +64,24 @@ const Booking = () => {
       const data = await response.json();
       if (data.status === 'success') {
         setBusDetails(data.data.bus);
-        // Mock booked seats for demo
-        setBookedSeats(['A1', 'A2', 'B5', 'C3']);
+      }
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const fetchSeatAvailability = async (scheduleId) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_URL}/schedules/${scheduleId}/seats?journey_date=${journeyDate}`
+      );
+      
+      if (!response.ok) throw new Error('Failed to fetch seat availability');
+      
+      const data = await response.json();
+      if (data.status === 'success') {
+        setBookedSeats(data.data.seatAvailability.bookedSeats);
       }
       setLoading(false);
     } catch (err) {
@@ -71,6 +107,12 @@ const Booking = () => {
     });
   };
 
+  const handleDateChange = (e) => {
+    const newDate = e.target.value;
+    setJourneyDate(newDate);
+    setSelectedSeats([]); // Clear selected seats when date changes
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -87,16 +129,16 @@ const Booking = () => {
     // Prepare booking data to pass to BookingBill
     const bookingData = {
       busDetails: {
-        id: busId,
-        busType: busDetails.busType,
-        busNumber: busDetails.busNumber,
-        vendor: busDetails.vendor,
-        from: busDetails.from,
-        to: busDetails.to,
-        departureTime: busDetails.departureTime,
-        fare: busDetails.fare
+        id: selectedSchedule.busId,
+        busType: selectedSchedule.busType || busDetails?.busType,
+        busNumber: selectedSchedule.busNumber || busDetails?.busNumber,
+        vendor: selectedSchedule.vendorName || busDetails?.vendor,
+        from: selectedSchedule.origin || searchCriteria.from,
+        to: selectedSchedule.destination || searchCriteria.to,
+        departureTime: selectedSchedule.departureTime,
+        fare: selectedSchedule.price || busDetails?.fare
       },
-      scheduleId: Number.parseInt(scheduleId || busDetails?.schedules?.[0]?.id || 1, 10),
+      scheduleId: selectedSchedule.scheduleId,
       journeyDate: journeyDate,
       selectedSeats: selectedSeats,
       numberOfSeats: selectedSeats.length,
@@ -104,12 +146,12 @@ const Booking = () => {
         name: passengerDetails.name,
         phone: passengerDetails.phone,
         email: passengerDetails.email,
-        pickupPoint: passengerDetails.pickupPoint || busDetails?.from,
-        dropPoint: passengerDetails.dropPoint || busDetails?.to,
+        pickupPoint: passengerDetails.pickupPoint || selectedSchedule.origin,
+        dropPoint: passengerDetails.dropPoint || selectedSchedule.destination,
         specialRequests: passengerDetails.specialRequests
       },
-      farePerSeat: busDetails.fare,
-      totalAmount: selectedSeats.length * busDetails.fare
+      farePerSeat: selectedSchedule.price || busDetails?.fare,
+      totalAmount: selectedSeats.length * (selectedSchedule.price || busDetails?.fare || 0)
     };
     
     // Navigate to BookingBill for review and breakdown
@@ -165,12 +207,12 @@ const Booking = () => {
     );
   }
 
-  if (error || !busDetails) {
+  if (error || !selectedSchedule) {
     return (
       <div className="booking-page">
         <div className="error-container">
           <h3>Error</h3>
-          <p>{error || 'Bus not found'}</p>
+          <p>{error || 'Please select a bus schedule'}</p>
           <button onClick={() => navigate('/search')} className="btn-primary">
             Back to Search
           </button>
@@ -179,31 +221,63 @@ const Booking = () => {
     );
   }
 
-  const totalAmount = selectedSeats.length * (busDetails.fare || 0);
+  const totalAmount = selectedSeats.length * (selectedSchedule.price || busDetails?.fare || 0);
 
   return (
     <div className="booking-page">
       <div className="booking-container">
         <h1 className="booking-title">Complete Your Booking</h1>
         
+        {/* Schedule Selector (if multiple schedules available) */}
+        {schedulesFromSearch.length > 1 && (
+          <div className="schedule-selector">
+            <h3>Select Your Bus</h3>
+            <div className="schedule-options">
+              {schedulesFromSearch.map((schedule) => (
+                <button
+                  key={schedule.scheduleId}
+                  type="button"
+                  className={`schedule-option ${selectedSchedule.scheduleId === schedule.scheduleId ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedSchedule(schedule);
+                    setSelectedSeats([]); // Clear seats when switching schedules
+                  }}
+                >
+                  <div className="schedule-time">
+                    <strong>{schedule.departureTime}</strong>
+                    <span className="arrow">→</span>
+                    <strong>{schedule.arrivalTime}</strong>
+                  </div>
+                  <div className="schedule-bus">
+                    {schedule.busNumber} - {schedule.busType}
+                  </div>
+                  <div className="schedule-price">
+                    Rs. {schedule.price}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {/* Bus Info Card */}
         <div className="bus-info-card">
           <div className="bus-info-header">
-            <h2>{busDetails.busType} - {busDetails.busNumber}</h2>
-            <span className="vendor-name">{busDetails.vendor}</span>
+            <h2>{selectedSchedule.busType || busDetails?.busType} - {selectedSchedule.busNumber || busDetails?.busNumber}</h2>
+            <span className="vendor-name">{selectedSchedule.vendorName || busDetails?.vendor}</span>
           </div>
           <div className="bus-info-body">
             <div className="info-item">
               <span className="label">Route:</span>
-              <span className="value">{busDetails.from} → {busDetails.to}</span>
+              <span className="value">{selectedSchedule.origin || searchCriteria.from} → {selectedSchedule.destination || searchCriteria.to}</span>
             </div>
             <div className="info-item">
               <span className="label">Departure:</span>
-              <span className="value">{busDetails.departureTime}</span>
+              <span className="value">{selectedSchedule.departureTime}</span>
             </div>
             <div className="info-item">
               <span className="label">Fare:</span>
-              <span className="value">Rs. {busDetails.fare} per seat</span>
+              <span className="value">Rs. {selectedSchedule.price || busDetails?.fare} per seat</span>
             </div>
           </div>
         </div>
@@ -258,7 +332,7 @@ const Booking = () => {
                     type="date"
                     id="journeyDate"
                     value={journeyDate}
-                    onChange={(e) => setJourneyDate(e.target.value)}
+                    onChange={handleDateChange}
                     min={new Date().toISOString().split('T')[0]}
                     required
                   />

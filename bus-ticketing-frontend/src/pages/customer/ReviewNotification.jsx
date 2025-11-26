@@ -66,18 +66,12 @@ const ReviewNotification = () => {
 
       const data = await response.json();
       if (data.status === 'success') {
-        // Filter bookings that are completed and 24 hours have passed since departure
-        const now = new Date();
-        const filtered = (data.data.bookings || []).filter(booking => {
-          const departureDateTime = new Date(`${booking.journeyDate} ${booking.departureTime}`);
-          const completionTime = new Date(departureDateTime.getTime() + 24 * 60 * 60 * 1000); // +24 hours
-          
-          return (
-            booking.bookingStatus === 'completed' &&
-            now >= completionTime &&
-            !booking.hasReview // Only show if not already reviewed
-          );
-        });
+        // Backend already filters for completed bookings where 24+ hours have passed
+        // since ride start time (journey_date + departure_time)
+        const bookings = data.data.bookings || [];
+        
+        // Only filter out bookings that already have reviews
+        const filtered = bookings.filter(booking => !booking.hasReview);
         
         setEligibleBookings(filtered);
       }
@@ -140,7 +134,7 @@ const ReviewNotification = () => {
 
       const data = await response.json();
 
-      if (data.status === 'success') {
+      if (response.ok && data.status === 'success') {
         alert('Thank you for your review! Your feedback helps us improve.');
         
         // Remove reviewed booking from list
@@ -160,6 +154,7 @@ const ReviewNotification = () => {
           }
         });
       } else {
+        // Show backend error message (e.g., "Please wait X more hour(s)")
         throw new Error(data.message || 'Failed to submit review');
       }
     } catch (err) {

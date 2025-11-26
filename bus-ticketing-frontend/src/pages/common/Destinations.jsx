@@ -251,19 +251,14 @@ const Destinations = () => {
   ];
 
   // State for filtering
-  const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Get unique categories
-  const categories = ['All', ...new Set(allDestinations.map(d => d.category))];
 
   // Filter destinations
   const filteredDestinations = allDestinations.filter(dest => {
-    const matchesCategory = selectedCategory === 'All' || dest.category === selectedCategory;
     const matchesSearch = dest.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          dest.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesSearch;
   });
 
   return (
@@ -277,7 +272,7 @@ const Destinations = () => {
           </p>
         </div>
 
-        {/* Filters */}
+        {/* Search */}
         <div className="filters-section">
           <div className="search-box">
             <input
@@ -288,18 +283,6 @@ const Destinations = () => {
               className="search-input"
             />
             <span className="search-icon">🔍</span>
-          </div>
-
-          <div className="category-filters">
-            {categories.map(category => (
-              <button
-                key={category}
-                className={`category-btn ${selectedCategory === category ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
           </div>
         </div>
 

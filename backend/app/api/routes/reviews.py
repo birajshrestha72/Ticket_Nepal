@@ -41,11 +41,17 @@ async def create_review(
     try:
         user_id = current_user.get("id")
         
-        # Verify booking belongs to user and is completed
+        # Verify booking belongs to user, is completed, and 24 hours have passed since ride start
         booking_query = """
-            SELECT id, booking_status, journey_date
-            FROM bookings
-            WHERE id = $1 AND user_id = $2
+            SELECT 
+                b.id, 
+                b.booking_status, 
+                b.journey_date,
+                bs.departure_time,
+                (b.journey_date + bs.departure_time) as ride_start_time
+            FROM bookings b
+            JOIN bus_schedules bs ON b.schedule_id = bs.id
+            WHERE b.id = $1 AND b.user_id = $2
         """
         
         booking = await database.fetch_one(
@@ -59,6 +65,17 @@ async def create_review(
         
         if booking['booking_status'] != 'completed':
             raise BadRequestException("Can only review completed bookings")
+        
+        # Check if 24 hours have passed since ride start time
+        ride_start_time = booking['ride_start_time']
+        hours_since_ride = (datetime.now() - ride_start_time).total_seconds() / 3600
+        
+        if hours_since_ride < 24:
+            hours_remaining = 24 - hours_since_ride
+            raise BadRequestException(
+                f"You can submit a review 24 hours after the ride starts. "
+                f"Please wait {int(hours_remaining)} more hour(s)."
+            )
         
         # Check if already reviewed
         existing_review_query = """

@@ -209,13 +209,10 @@ const CustomerDashboard = () => {
             <span className="nav-text">Search Buses</span>
           </Link>
           
-          <button
-            className={`nav-item ${activeSection === 'bookings' ? 'active' : ''}`}
-            onClick={() => setActiveSection('bookings')}
-          >
+          <Link to="/bookings" className="nav-item">
             <span className="nav-icon">🎫</span>
             <span className="nav-text">My Bookings</span>
-          </button>
+          </Link>
           
           <Link to="/profile" className="nav-item">
             <span className="nav-icon">👤</span>

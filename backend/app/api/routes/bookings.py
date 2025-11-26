@@ -3,14 +3,14 @@ Bookings API Routes
 Handles booking management, retrieval, and customer booking history
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date, timedelta
 from pydantic import BaseModel, EmailStr, Field
 import uuid
 
 from app.config.database import database
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.core.exceptions import NotFoundException, BadRequestException
 
 router = APIRouter()
@@ -179,7 +179,8 @@ async def get_eligible_for_review(
     current_user: Dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
-    Get bookings eligible for review (completed + 24 hours after journey)
+    Get bookings eligible for review (completed + 24 hours after ride start time)
+    Ride start time = journey_date + departure_time
     """
     try:
         user_id = current_user.get("id")
@@ -213,7 +214,7 @@ async def get_eligible_for_review(
             JOIN routes r ON bs.route_id = r.id
             WHERE b.user_id = $1
               AND b.booking_status = 'completed'
-              AND b.journey_date <= CURRENT_DATE - INTERVAL '1 day'
+              AND (b.journey_date + bs.departure_time) <= (CURRENT_TIMESTAMP - INTERVAL '24 hours')
             ORDER BY b.journey_date DESC
         """
         
@@ -292,7 +293,7 @@ async def get_my_bookings(
                 -- Bus schedule details
                 bs.departure_time as "departureTime",
                 bs.arrival_time as "arrivalTime",
-                bs.base_fare as "baseFare",
+                bs.price as "price",
                 
                 -- Bus details
                 bus.bus_number as "busNumber",
@@ -308,7 +309,7 @@ async def get_my_bookings(
                 r.origin,
                 r.destination,
                 r.distance_km as "distanceKm",
-                r.duration_hours as "durationHours",
+                r.estimated_duration_minutes as "estimatedDurationMinutes",
                 
                 -- Payment details
                 p.payment_method as "paymentMethod",
@@ -482,6 +483,160 @@ async def cancel_booking(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to cancel booking: {str(e)}"
+        )
+
+
+@router.get("/vendor/all")
+async def get_vendor_bookings(
+    current_user: Dict = Depends(require_role(["vendor", "system_admin"])),
+    status_filter: Optional[str] = Query(None, description="Filter by status", alias="status"),
+    bus_id: Optional[int] = Query(None, description="Filter by bus"),
+    date_from: Optional[str] = Query(None, description="Filter from date (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Filter to date (YYYY-MM-DD)"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0)
+) -> Dict[str, Any]:
+    """
+    Get all bookings for vendor's buses
+    Vendors can see bookings for all their buses
+    """
+    try:
+        vendor_id = current_user.get('vendor_id')
+        
+        conditions = []
+        params = []
+        param_count = 1
+        
+        # Filter by vendor
+        if current_user.get('role') == 'vendor' and vendor_id:
+            conditions.append(f"v.vendor_id = ${param_count}")
+            params.append(vendor_id)
+            param_count += 1
+        
+        # Filter by status
+        if status_filter:
+            conditions.append(f"b.status = ${param_count}")
+            params.append(status_filter)
+            param_count += 1
+        
+        # Filter by bus
+        if bus_id:
+            conditions.append(f"bus.bus_id = ${param_count}")
+            params.append(bus_id)
+            param_count += 1
+        
+        # Filter by date range
+        if date_from:
+            conditions.append(f"b.journey_date >= ${param_count}")
+            params.append(date_from)
+            param_count += 1
+        
+        if date_to:
+            conditions.append(f"b.journey_date <= ${param_count}")
+            params.append(date_to)
+            param_count += 1
+        
+        where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+        
+        query = f"""
+            SELECT 
+                b.booking_id,
+                b.booking_reference,
+                b.user_id,
+                b.schedule_id,
+                b.seat_numbers,
+                b.passenger_name,
+                b.passenger_email,
+                b.passenger_phone,
+                b.journey_date,
+                b.total_amount,
+                b.status,
+                b.created_at,
+                u.name as customer_name,
+                u.email as customer_email,
+                u.phone as customer_phone,
+                bus.bus_id,
+                bus.bus_number,
+                bus.bus_type,
+                r.origin,
+                r.destination,
+                bs.departure_time,
+                bs.arrival_time,
+                p.payment_method,
+                p.payment_status,
+                v.company_name as vendor_name
+            FROM bookings b
+            JOIN users u ON b.user_id = u.user_id
+            JOIN bus_schedules bs ON b.schedule_id = bs.schedule_id
+            JOIN buses bus ON bs.bus_id = bus.bus_id
+            JOIN routes r ON bs.route_id = r.route_id
+            JOIN vendors v ON bus.vendor_id = v.vendor_id
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
+            {where_clause}
+            ORDER BY b.created_at DESC
+            LIMIT ${param_count}
+            OFFSET ${param_count + 1}
+        """
+        
+        params.extend([limit, offset])
+        bookings = await database.fetch_all(query, *params)
+        
+        # Get total count
+        count_params = params[:-2]  # Remove limit and offset
+        count_query = f"""
+            SELECT COUNT(*) as total
+            FROM bookings b
+            JOIN bus_schedules bs ON b.schedule_id = bs.schedule_id
+            JOIN buses bus ON bs.bus_id = bus.bus_id
+            JOIN vendors v ON bus.vendor_id = v.vendor_id
+            {where_clause}
+        """
+        total = await database.fetch_one(count_query, *count_params)
+        
+        result = []
+        for booking in bookings:
+            result.append({
+                "booking_id": booking['booking_id'],
+                "booking_reference": booking['booking_reference'],
+                "customer": {
+                    "name": booking['customer_name'] or booking['passenger_name'],
+                    "email": booking['customer_email'] or booking['passenger_email'],
+                    "phone": booking['customer_phone'] or booking['passenger_phone']
+                },
+                "bus": {
+                    "bus_id": booking['bus_id'],
+                    "bus_number": booking['bus_number'],
+                    "bus_type": booking['bus_type']
+                },
+                "route": {
+                    "origin": booking['origin'],
+                    "destination": booking['destination']
+                },
+                "journey_date": booking['journey_date'].isoformat() if booking['journey_date'] else None,
+                "departure_time": str(booking['departure_time'])[:5] if booking['departure_time'] else None,
+                "arrival_time": str(booking['arrival_time'])[:5] if booking['arrival_time'] else None,
+                "seat_numbers": booking['seat_numbers'] or [],
+                "total_amount": float(booking['total_amount']) if booking['total_amount'] else 0.0,
+                "payment_method": booking['payment_method'],
+                "payment_status": booking['payment_status'],
+                "status": booking['status'],
+                "created_at": booking['created_at'].isoformat() if booking['created_at'] else None
+            })
+        
+        return {
+            "status": "success",
+            "data": {
+                "bookings": result,
+                "total": total['total'] if total else 0,
+                "limit": limit,
+                "offset": offset
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch vendor bookings: {str(e)}"
         )
 
 

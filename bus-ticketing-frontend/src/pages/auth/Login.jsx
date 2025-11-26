@@ -81,11 +81,11 @@ const Login = () => {
       
       // Redirect based on role from database: 'customer', 'vendor', 'system_admin'
       if (user.role === 'system_admin') {
-        navigate('/superadmin/dashboard');
+        navigate('/superadmin');
       } else if (user.role === 'vendor') {
-        navigate('/vendor/dashboard');
+        navigate('/vendor');
       } else if (user.role === 'customer') {
-        navigate('/customer/dashboard');
+        navigate('/customer');
       } else {
         navigate('/');
       }
@@ -139,11 +139,11 @@ const Login = () => {
       
       // Redirect based on role
       if (userData.role === 'system_admin') {
-        navigate('/superadmindashboard');
+        navigate('/superadmin');
       } else if (userData.role === 'vendor') {
-        navigate('/vendordashboard');
+        navigate('/vendor');
       } else if (userData.role === 'customer') {
-        navigate('/customerdashboard');
+        navigate('/customer');
       } else {
         navigate('/');
       }

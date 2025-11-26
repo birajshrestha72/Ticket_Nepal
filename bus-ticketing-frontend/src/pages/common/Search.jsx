@@ -57,82 +57,99 @@ const Search = () => {
     setError(null);
     
     try {
-      // Build query parameters
+      // Build query parameters for schedules API
       const queryParams = new URLSearchParams();
       if (searchCriteria.from) queryParams.append('origin', searchCriteria.from);
       if (searchCriteria.to) queryParams.append('destination', searchCriteria.to);
-      if (filters.minPrice) queryParams.append('min_price', filters.minPrice);
-      if (filters.maxPrice) queryParams.append('max_price', filters.maxPrice);
-      if (filters.selectedVendor) queryParams.append('vendor_id', filters.selectedVendor);
+      if (searchCriteria.date) {
+        const formattedDate = searchCriteria.date.toISOString().split('T')[0];
+        queryParams.append('journey_date', formattedDate);
+      }
       
-      // Fetch buses from backend API
-      const response = await fetch(`${API_URL}/buses/search?${queryParams.toString()}`);
+      // Fetch schedules from backend API
+      const response = await fetch(`${API_URL}/schedules/available?${queryParams.toString()}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch bus data');
+        throw new Error('Failed to fetch bus schedules');
       }
       
       const data = await response.json();
       
       if (data.status === 'success') {
-        const busData = data.data.buses || [];
+        const schedules = data.data.schedules || [];
         
-        // Process bus data to group by type
-        const processBusData = (buses) => {
-          // Group buses by unique bus type
+        // Process schedules to group by bus type
+        const processBusData = (schedules) => {
+          // Group by unique bus type
           const typeMap = new Map();
           
-          buses.forEach(bus => {
-            if (!typeMap.has(bus.busType)) {
-              typeMap.set(bus.busType, {
-                busType: bus.busType,
+          schedules.forEach(schedule => {
+            const busType = schedule.bus.bus_type;
+            
+            if (!typeMap.has(busType)) {
+              typeMap.set(busType, {
+                busType: busType,
                 vendors: [],
-                buses: [],
-                minFare: bus.fare,
-                maxFare: bus.fare,
+                schedules: [],
+                minFare: schedule.price,
+                maxFare: schedule.price,
                 totalSeats: 0,
                 availableSeats: 0
               });
             }
             
-            const typeData = typeMap.get(bus.busType);
+            const typeData = typeMap.get(busType);
             
             // Add vendor if not already added
-            if (!typeData.vendors.find(v => v.id === bus.vendorId)) {
+            if (!typeData.vendors.find(v => v.id === schedule.vendor.vendor_id)) {
               typeData.vendors.push({
-                id: bus.vendorId,
-                name: bus.vendor,
-                rating: bus.rating
+                id: schedule.vendor.vendor_id,
+                name: schedule.vendor.name,
+                rating: schedule.vendor.rating
               });
             }
             
-            // Add bus to the type
-            typeData.buses.push(bus);
+            // Filter by vendor if selected
+            if (filters.selectedVendor && schedule.vendor.name !== filters.selectedVendor) {
+              return;
+            }
+            
+            // Filter by price range
+            if (filters.minPrice && schedule.price < parseFloat(filters.minPrice)) {
+              return;
+            }
+            if (filters.maxPrice && schedule.price > parseFloat(filters.maxPrice)) {
+              return;
+            }
+            
+            // Add schedule to the type
+            typeData.schedules.push(schedule);
             
             // Update fare range
-            typeData.minFare = Math.min(typeData.minFare, bus.fare);
-            typeData.maxFare = Math.max(typeData.maxFare, bus.fare);
+            typeData.minFare = Math.min(typeData.minFare, schedule.price);
+            typeData.maxFare = Math.max(typeData.maxFare, schedule.price);
             
             // Update seat counts
-            typeData.totalSeats += bus.seats;
-            typeData.availableSeats += bus.availableSeats;
+            typeData.totalSeats += schedule.bus.total_seats;
+            typeData.availableSeats += schedule.bus.available_seats;
           });
 
-          // Convert map to array and sort by bus type name
-          return Array.from(typeMap.values()).sort((a, b) => 
-            a.busType.localeCompare(b.busType)
-          );
+          // Convert map to array and filter out empty types, then sort
+          return Array.from(typeMap.values())
+            .filter(type => type.schedules.length > 0)
+            .sort((a, b) => a.busType.localeCompare(b.busType));
         };
 
-        // Extract unique vendors from bus data
-        const extractVendors = (buses) => {
+        // Extract unique vendors from schedules
+        const extractVendors = (schedules) => {
           const vendorMap = new Map();
-          buses.forEach(bus => {
-            if (!vendorMap.has(bus.vendorId)) {
-              vendorMap.set(bus.vendorId, {
-                id: bus.vendorId,
-                name: bus.vendor,
-                rating: bus.rating
+          schedules.forEach(schedule => {
+            const vendorId = schedule.vendor.vendor_id;
+            if (!vendorMap.has(vendorId)) {
+              vendorMap.set(vendorId, {
+                id: vendorId,
+                name: schedule.vendor.name,
+                rating: schedule.vendor.rating
               });
             }
           });
@@ -140,19 +157,19 @@ const Search = () => {
         };
 
         // Process and set data
-        const processedTypes = processBusData(busData);
-        const vendors = extractVendors(busData);
+        const processedTypes = processBusData(schedules);
+        const vendors = extractVendors(schedules);
         
         setBusTypes(processedTypes);
         setAllVendors(vendors);
       } else {
-        throw new Error(data.message || 'Failed to fetch buses');
+        throw new Error(data.message || 'Failed to fetch bus schedules');
       }
       
       setLoading(false);
     } catch (err) {
       console.error('Error fetching bus data:', err);
-      setError(err.message || 'Failed to fetch bus data. Please try again.');
+      setError(err.message || 'Failed to fetch bus schedules. Please try again.');
       setLoading(false);
     }
   };
@@ -408,7 +425,7 @@ const Search = () => {
               <div key={index} className="bus-type-card">
                 <div className="bus-type-header">
                   <h3 className="bus-type-name">{typeData.busType}</h3>
-                  <div className="bus-count-badge">{typeData.buses.length} buses</div>
+                  <div className="bus-count-badge">{typeData.schedules.length} available</div>
                 </div>
 
                 {/* Vendors offering this type */}
@@ -418,7 +435,7 @@ const Search = () => {
                     {typeData.vendors.map(vendor => (
                       <span key={vendor.id} className="vendor-tag">
                         {vendor.name}
-                        <span className="vendor-rating">★ {vendor.rating}</span>
+                        <span className="vendor-rating">★ {vendor.rating.toFixed(1)}</span>
                       </span>
                     ))}
                   </div>
@@ -428,8 +445,8 @@ const Search = () => {
                 <div className="price-range">
                   <span className="price-label">Price Range:</span>
                   <span className="price-value">
-                    Rs. {typeData.minFare}
-                    {typeData.minFare !== typeData.maxFare && ` - Rs. ${typeData.maxFare}`}
+                    Rs. {typeData.minFare.toLocaleString()}
+                    {typeData.minFare !== typeData.maxFare && ` - Rs. ${typeData.maxFare.toLocaleString()}`}
                   </span>
                 </div>
 
@@ -444,46 +461,50 @@ const Search = () => {
                 </div>
 
                 {/* Common Amenities */}
-                <div className="amenities-preview">
-                  {typeData.buses[0].amenities.slice(0, 3).map((amenity, idx) => (
-                    <span key={idx} className="amenity-tag">{amenity}</span>
+                {typeData.schedules[0]?.bus?.amenities && typeData.schedules[0].bus.amenities.length > 0 && (
+                  <div className="amenities-preview">
+                    {typeData.schedules[0].bus.amenities.slice(0, 3).map((amenity, idx) => (
+                      <span key={idx} className="amenity-tag">{amenity}</span>
+                    ))}
+                    {typeData.schedules[0].bus.amenities.length > 3 && (
+                      <span className="amenity-more">+{typeData.schedules[0].bus.amenities.length - 3}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Quick Schedule List */}
+                <div className="quick-bus-list">
+                  {typeData.schedules.slice(0, 2).map(schedule => (
+                    <div key={schedule.schedule_id} className="quick-bus-item">
+                      <div className="quick-bus-info">
+                        <span className="bus-vendor">{schedule.vendor.name}</span>
+                        <span className="bus-time">{schedule.departure_time} - {schedule.arrival_time}</span>
+                      </div>
+                      <div className="quick-bus-price">Rs. {schedule.price.toLocaleString()}</div>
+                    </div>
                   ))}
-                  {typeData.buses[0].amenities.length > 3 && (
-                    <span className="amenity-more">+{typeData.buses[0].amenities.length - 3}</span>
+                  {typeData.schedules.length > 2 && (
+                    <div className="more-buses-hint">
+                      +{typeData.schedules.length - 2} more schedules
+                    </div>
                   )}
                 </div>
 
-                {/* View Details Button */}
+                {/* Select Bus Button */}
                 <Link 
-                  to={`/buses/${encodeURIComponent(typeData.busType)}`}
+                  to="/booking"
                   state={{ 
-                    busType: typeData.busType, 
-                    buses: typeData.buses,
-                    searchCriteria: searchCriteria,
-                    filters: filters 
+                    schedules: typeData.schedules,
+                    searchCriteria: {
+                      from: searchCriteria.from,
+                      to: searchCriteria.to,
+                      date: searchCriteria.date.toISOString().split('T')[0]
+                    }
                   }}
                   className="btn-view-details"
                 >
-                  View All {typeData.buses.length} Buses →
+                  Select from {typeData.schedules.length} {typeData.schedules.length === 1 ? 'Bus' : 'Buses'} →
                 </Link>
-
-                {/* Quick Bus List */}
-                <div className="quick-bus-list">
-                  {typeData.buses.slice(0, 2).map(bus => (
-                    <div key={bus.id} className="quick-bus-item">
-                      <div className="quick-bus-info">
-                        <span className="bus-vendor">{bus.vendor}</span>
-                        <span className="bus-time">{bus.departureTime} - {bus.arrivalTime}</span>
-                      </div>
-                      <div className="quick-bus-price">Rs. {bus.fare}</div>
-                    </div>
-                  ))}
-                  {typeData.buses.length > 2 && (
-                    <div className="more-buses-hint">
-                      +{typeData.buses.length - 2} more buses
-                    </div>
-                  )}
-                </div>
               </div>
             ))}
           </div>
