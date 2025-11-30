@@ -147,6 +147,7 @@ CREATE TABLE bookings (
     pickup_point VARCHAR(200),
     drop_point VARCHAR(200),
     special_requests TEXT,
+    payment_deadline TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL '15 minutes'),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -371,6 +372,62 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER generate_ticket_num BEFORE INSERT ON tickets
     FOR EACH ROW EXECUTE FUNCTION generate_ticket_number();
 
+-- Function: Auto-cancel expired unpaid bookings
+CREATE OR REPLACE FUNCTION cancel_expired_bookings()
+RETURNS INTEGER AS $$
+DECLARE
+    cancelled_count INTEGER;
+BEGIN
+    -- Cancel bookings that are still pending and past payment deadline
+    UPDATE bookings
+    SET booking_status = 'cancelled',
+        updated_at = CURRENT_TIMESTAMP
+    WHERE booking_status = 'pending'
+      AND payment_deadline < CURRENT_TIMESTAMP
+      AND NOT EXISTS (
+          SELECT 1 FROM payments 
+          WHERE payments.booking_id = bookings.booking_id 
+            AND payment_status = 'success'
+      );
+    
+    GET DIAGNOSTICS cancelled_count = ROW_COUNT;
+    
+    RETURN cancelled_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function: Check and update booking status after payment
+CREATE OR REPLACE FUNCTION update_booking_on_payment()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- If payment is successful, update booking to confirmed
+    IF NEW.payment_status = 'success' AND OLD.payment_status != 'success' THEN
+        UPDATE bookings
+        SET booking_status = 'confirmed'
+        WHERE booking_id = NEW.booking_id
+          AND booking_status = 'pending';
+    END IF;
+    
+    -- If payment failed and booking is still pending, optionally cancel
+    -- (Uncomment if you want automatic cancellation on payment failure)
+    -- IF NEW.payment_status = 'failed' AND OLD.payment_status != 'failed' THEN
+    --     UPDATE bookings
+    --     SET booking_status = 'cancelled'
+    --     WHERE booking_id = NEW.booking_id
+    --       AND booking_status = 'pending';
+    -- END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger: Auto-update booking status when payment status changes
+CREATE TRIGGER payment_status_changed
+    AFTER UPDATE ON payments
+    FOR EACH ROW
+    WHEN (OLD.payment_status IS DISTINCT FROM NEW.payment_status)
+    EXECUTE FUNCTION update_booking_on_payment();
+
 -- ============================================================================
 -- STEP 6: CREATE VIEWS
 -- ============================================================================
@@ -455,6 +512,27 @@ LEFT JOIN bookings bk ON bs.schedule_id = bk.schedule_id
     AND bk.booking_status IN ('confirmed', 'completed')
 GROUP BY v.vendor_id, v.company_name, v.average_rating, v.total_reviews;
 
+-- View: Expired unpaid bookings
+CREATE OR REPLACE VIEW expired_bookings AS
+SELECT 
+    bk.booking_id,
+    bk.booking_reference,
+    bk.booking_status,
+    bk.payment_deadline,
+    bk.total_amount,
+    bk.created_at,
+    (CURRENT_TIMESTAMP - bk.payment_deadline) as time_expired,
+    u.user_id,
+    u.name as customer_name,
+    u.email as customer_email,
+    COALESCE(p.payment_status, 'no_payment') as payment_status
+FROM bookings bk
+LEFT JOIN users u ON bk.user_id = u.user_id
+LEFT JOIN payments p ON bk.booking_id = p.booking_id
+WHERE bk.booking_status = 'pending'
+  AND bk.payment_deadline < CURRENT_TIMESTAMP
+ORDER BY bk.payment_deadline DESC;
+
 -- ============================================================================
 -- SETUP COMPLETE
 -- ============================================================================
@@ -463,5 +541,19 @@ GROUP BY v.vendor_id, v.company_name, v.average_rating, v.total_reviews;
 SELECT 'Database setup complete!' as status;
 SELECT COUNT(*) as total_tables FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
 SELECT COUNT(*) as total_views FROM information_schema.views WHERE table_schema = 'public';
+
+-- ============================================================================
+-- SCHEDULED JOBS (Setup separately using pg_cron or application scheduler)
+-- ============================================================================
+
+-- Option 1: Using pg_cron extension (requires installation)
+-- SELECT cron.schedule('cancel-expired-bookings', '*/5 * * * *', 'SELECT cancel_expired_bookings()');
+
+-- Option 2: Run from application (recommended)
+-- Schedule this query to run every 5 minutes from your backend:
+-- SELECT cancel_expired_bookings();
+
+-- Option 3: Manual cleanup query
+-- SELECT cancel_expired_bookings();
 
 COMMIT;

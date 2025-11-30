@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../../css/adminSchedules.css';
 import '../../css/scheduleManagement.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -11,8 +12,10 @@ const AdminSchedules = () => {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
   const [filters, setFilters] = useState({
@@ -28,35 +31,62 @@ const AdminSchedules = () => {
     departure_time: '',
     arrival_time: '',
     price: '',
-    operating_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    operating_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     is_active: true
   });
 
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const daysOfWeek = [
+    { short: 'Mon', full: 'Monday' },
+    { short: 'Tue', full: 'Tuesday' },
+    { short: 'Wed', full: 'Wednesday' },
+    { short: 'Thu', full: 'Thursday' },
+    { short: 'Fri', full: 'Friday' },
+    { short: 'Sat', full: 'Saturday' },
+    { short: 'Sun', full: 'Sunday' }
+  ];
 
   useEffect(() => {
-    fetchSchedules();
-    fetchBuses();
-    fetchRoutes();
-  }, [filters]);
+    const initData = async () => {
+      await Promise.all([fetchBuses(), fetchRoutes()]);
+      await fetchSchedules();
+    };
+    initData();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      fetchSchedules();
+    }
+  }, [filters.bus_id, filters.route_id, filters.is_active]);
 
   const fetchSchedules = async () => {
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
       const params = new URLSearchParams();
-      
       if (filters.bus_id) params.append('bus_id', filters.bus_id);
       if (filters.route_id) params.append('route_id', filters.route_id);
-      if (filters.is_active !== 'all') params.append('is_active', filters.is_active);
+      if (filters.is_active !== 'all') params.append('is_active', filters.is_active === 'true');
       
-      const response = await fetch(`${API_URL}/schedules/vendor/all?${params.toString()}`, {
+      const url = `${API_URL}/schedules/vendor/all${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch schedules');
@@ -75,24 +105,17 @@ const AdminSchedules = () => {
   const fetchBuses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      let endpoint = `${API_URL}/buses/all`;
-      if (user.role === 'vendor') {
-        endpoint = `${API_URL}/buses/vendor`;
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`${API_URL}/buses/vendor`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setBuses(data.data?.buses || []);
-      }
+      if (!response.ok) throw new Error('Failed to fetch buses');
+      
+      const data = await response.json();
+      setBuses(data.data?.buses || []);
     } catch (err) {
       console.error('Error fetching buses:', err);
     }
@@ -101,17 +124,17 @@ const AdminSchedules = () => {
   const fetchRoutes = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/routes/all?is_active=true`, {
+      const response = await fetch(`${API_URL}/routes/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setRoutes(data.data?.routes || []);
-      }
+      if (!response.ok) throw new Error('Failed to fetch routes');
+      
+      const data = await response.json();
+      setRoutes(data.data?.routes || []);
     } catch (err) {
       console.error('Error fetching routes:', err);
     }
@@ -126,38 +149,114 @@ const AdminSchedules = () => {
   };
 
   const handleDayToggle = (day) => {
-    setFormData(prev => ({
-      ...prev,
-      operating_days: prev.operating_days.includes(day)
+    setFormData(prev => {
+      const days = prev.operating_days.includes(day)
         ? prev.operating_days.filter(d => d !== day)
-        : [...prev.operating_days, day]
-    }));
+        : [...prev.operating_days, day];
+      return { ...prev, operating_days: days };
+    });
+  };
+
+  const openAddModal = () => {
+    setEditingSchedule(null);
+    setFormData({
+      bus_id: '',
+      route_id: '',
+      departure_time: '',
+      arrival_time: '',
+      price: '',
+      operating_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      is_active: true
+    });
+    setShowModal(true);
+  };
+
+  const openEditModal = (schedule) => {
+    setEditingSchedule(schedule);
+    setFormData({
+      bus_id: schedule.bus_id.toString(),
+      route_id: schedule.route_id.toString(),
+      departure_time: schedule.departure_time.substring(0, 5), // HH:MM format
+      arrival_time: schedule.arrival_time.substring(0, 5),
+      price: schedule.price.toString(),
+      operating_days: schedule.operating_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      is_active: schedule.is_active
+    });
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingSchedule(null);
+    setFormData({
+      bus_id: '',
+      route_id: '',
+      departure_time: '',
+      arrival_time: '',
+      price: '',
+      operating_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      is_active: true
+    });
+  };
+
+  const validateForm = () => {
+    if (!formData.bus_id) {
+      alert('Please select a bus');
+      return false;
+    }
+    if (!formData.route_id) {
+      alert('Please select a route');
+      return false;
+    }
+    if (!formData.departure_time) {
+      alert('Please enter departure time');
+      return false;
+    }
+    if (!formData.arrival_time) {
+      alert('Please enter arrival time');
+      return false;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      alert('Please enter a valid price');
+      return false;
+    }
+    if (formData.operating_days.length === 0) {
+      alert('Please select at least one operating day');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
     
+    if (!validateForm()) return;
+
     try {
       const token = localStorage.getItem('token');
-      const url = editingSchedule 
+      const url = editingSchedule
         ? `${API_URL}/schedules/${editingSchedule.schedule_id}`
         : `${API_URL}/schedules/create`;
       
       const method = editingSchedule ? 'PUT' : 'POST';
       
+      const payload = {
+        busId: parseInt(formData.bus_id),
+        routeId: parseInt(formData.route_id),
+        departureTime: formData.departure_time,
+        arrivalTime: formData.arrival_time,
+        price: parseFloat(formData.price),
+        operatingDays: formData.operating_days,
+        isActive: formData.is_active
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          ...formData,
-          bus_id: parseInt(formData.bus_id),
-          route_id: parseInt(formData.route_id),
-          price: parseFloat(formData.price)
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -165,78 +264,19 @@ const AdminSchedules = () => {
         throw new Error(errorData.detail || 'Failed to save schedule');
       }
 
-      await fetchSchedules();
-      resetForm();
-      setShowForm(false);
+      setSuccessMessage(editingSchedule ? 'Schedule updated successfully!' : 'Schedule created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      closeModal();
+      fetchSchedules();
     } catch (err) {
       console.error('Error saving schedule:', err);
-      setError(err.message);
+      alert(err.message);
     }
   };
 
   const handleEdit = (schedule) => {
-    setEditingSchedule(schedule);
-    setFormData({
-      bus_id: schedule.bus_id?.toString() || '',
-      route_id: schedule.route_id?.toString() || '',
-      departure_time: schedule.departure_time || '',
-      arrival_time: schedule.arrival_time || '',
-      price: schedule.price?.toString() || '',
-      operating_days: schedule.operating_days || daysOfWeek,
-      is_active: schedule.is_active !== undefined ? schedule.is_active : true
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (scheduleId) => {
-    if (!window.confirm('Are you sure you want to delete this schedule? This will affect future bookings.')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/schedules/${scheduleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to delete schedule');
-      }
-
-      await fetchSchedules();
-    } catch (err) {
-      console.error('Error deleting schedule:', err);
-      setError(err.message);
-    }
-  };
-
-  const toggleScheduleStatus = async (schedule) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/schedules/${schedule.schedule_id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          is_active: !schedule.is_active
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update schedule status');
-      }
-
-      await fetchSchedules();
-    } catch (err) {
-      console.error('Error updating schedule status:', err);
-      setError(err.message);
-    }
+    openEditModal(schedule);
   };
 
   const resetForm = () => {
@@ -246,116 +286,226 @@ const AdminSchedules = () => {
       departure_time: '',
       arrival_time: '',
       price: '',
-      operating_days: daysOfWeek,
+      operating_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       is_active: true
     });
     setEditingSchedule(null);
+    setShowForm(false);
   };
 
-  if (loading && schedules.length === 0) {
-    return (
-      <div className="schedule-management">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading schedules...</p>
-        </div>
-      </div>
-    );
-  }
+  const toggleScheduleStatus = async (schedule) => {
+    await toggleStatus(schedule);
+  };
+
+  const handleDelete = async (scheduleId) => {
+    if (!window.confirm('Are you sure you want to delete this schedule? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/schedules/${scheduleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule');
+      }
+
+      setSuccessMessage('Schedule deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      fetchSchedules();
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      alert(err.message);
+    }
+  };
+
+  const toggleStatus = async (schedule) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/schedules/${schedule.schedule_id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          busId: schedule.bus_id,
+          routeId: schedule.route_id,
+          departureTime: schedule.departure_time,
+          arrivalTime: schedule.arrival_time,
+          price: schedule.price,
+          operatingDays: schedule.operating_days,
+          isActive: !schedule.is_active
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update status');
+      }
+
+      setSuccessMessage(`Schedule ${!schedule.is_active ? 'activated' : 'deactivated'} successfully!`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      fetchSchedules();
+    } catch (err) {
+      console.error('Error toggling status:', err);
+      alert(err.message);
+    }
+  };
+
+  const filteredSchedules = schedules.filter(schedule => {
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        schedule.bus_number?.toLowerCase().includes(searchLower) ||
+        schedule.origin?.toLowerCase().includes(searchLower) ||
+        schedule.destination?.toLowerCase().includes(searchLower) ||
+        schedule.route?.toLowerCase().includes(searchLower)
+      );
+    }
+    return true;
+  });
+
+  const formatTime = (time) => {
+    if (!time) return '';
+    return time.substring(0, 5); // HH:MM
+  };
+
+  const calculateDuration = (departure, arrival) => {
+    if (!departure || !arrival) return '';
+    const [depHour, depMin] = departure.split(':').map(Number);
+    const [arrHour, arrMin] = arrival.split(':').map(Number);
+    
+    let hours = arrHour - depHour;
+    let minutes = arrMin - depMin;
+    
+    if (minutes < 0) {
+      hours--;
+      minutes += 60;
+    }
+    if (hours < 0) hours += 24;
+    
+    return `${hours}h ${minutes}m`;
+  };
 
   return (
-    <div className="schedule-management">
-      {/* Header Section */}
-      <div className="page-header">
-        <div className="header-left">
-          <h1 className="page-title">📅 Schedule Management</h1>
-          <p className="page-subtitle">Manage bus schedules, timings, and pricing</p>
+    <div className="page adminSchedules">
+      <div className="container">
+        {/* Header Section */}
+        <div className="page-header">
+          <div className="header-left">
+            <h1 className="page-title">📅 Schedule Management</h1>
+            <p className="page-subtitle">Manage bus schedules, timings, and pricing</p>
+          </div>
+          <div className="header-actions">
+            <button className="btn-primary" onClick={openAddModal}>
+              <span>➕</span> Add New Schedule
+            </button>
+          </div>
         </div>
-        <div className="header-actions">
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="success-banner">
+            <span className="success-icon">✓</span>
+            <span>{successMessage}</span>
+            <button className="close-btn" onClick={() => setSuccessMessage('')}>✕</button>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="error-banner">
+            <span className="error-icon">⚠️</span>
+            <span>{error}</span>
+            <button className="close-btn" onClick={() => setError(null)}>✕</button>
+          </div>
+        )}
+
+        {/* Search and Filters Section */}
+        <div className="filters-section">
+          <div className="filter-group search-group">
+            <label>🔍 Search</label>
+            <input
+              type="text"
+              placeholder="Search by bus, route, origin, or destination..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="search-input"
+            />
+          </div>
+
+          <div className="filter-group">
+            <label>Bus</label>
+            <select
+              value={filters.bus_id}
+              onChange={(e) => setFilters(prev => ({ ...prev, bus_id: e.target.value }))}
+              className="filter-select"
+            >
+              <option value="">All Buses</option>
+              {buses.map(bus => (
+                <option key={bus.bus_id} value={bus.bus_id}>
+                  {bus.bus_number} - {bus.bus_type}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Route</label>
+            <select
+              value={filters.route_id}
+              onChange={(e) => setFilters(prev => ({ ...prev, route_id: e.target.value }))}
+              className="filter-select"
+            >
+              <option value="">All Routes</option>
+              {routes.map(route => (
+                <option key={route.route_id} value={route.route_id}>
+                  {route.origin} → {route.destination}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-group">
+            <label>Status</label>
+            <select
+              value={filters.is_active}
+              onChange={(e) => setFilters(prev => ({ ...prev, is_active: e.target.value }))}
+              className="filter-select"
+            >
+              <option value="all">All</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+
           <button 
-            className="btn-primary"
+            className="btn-reset-filters"
             onClick={() => {
-              resetForm();
-              setShowForm(true);
+              setFilters({ bus_id: '', route_id: '', is_active: 'all' });
+              setSearchTerm('');
             }}
           >
-            <span>➕</span> Add New Schedule
+            🔄 Reset
           </button>
         </div>
-      </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="error-banner">
-          <span className="error-icon">⚠️</span>
-          <span>{error}</span>
-          <button className="close-btn" onClick={() => setError(null)}>✕</button>
-        </div>
-      )}
-
-      {/* Filters Section */}
-      <div className="filters-section">
-        <div className="filter-group">
-          <label>Bus</label>
-          <select
-            value={filters.bus_id}
-            onChange={(e) => setFilters(prev => ({ ...prev, bus_id: e.target.value }))}
-            className="filter-select"
-          >
-            <option value="">All Buses</option>
-            {buses.map(bus => (
-              <option key={bus.bus_id} value={bus.bus_id}>
-                {bus.bus_number} - {bus.bus_type}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Route</label>
-          <select
-            value={filters.route_id}
-            onChange={(e) => setFilters(prev => ({ ...prev, route_id: e.target.value }))}
-            className="filter-select"
-          >
-            <option value="">All Routes</option>
-            {routes.map(route => (
-              <option key={route.route_id} value={route.route_id}>
-                {route.origin} → {route.destination}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>Status</label>
-          <select
-            value={filters.is_active}
-            onChange={(e) => setFilters(prev => ({ ...prev, is_active: e.target.value }))}
-            className="filter-select"
-          >
-            <option value="all">All</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-        </div>
-
-        <button 
-          className="btn-reset-filters"
-          onClick={() => setFilters({ bus_id: '', route_id: '', is_active: 'all' })}
-        >
-          🔄 Reset
-        </button>
-      </div>
-
-      {/* Schedule Form Modal */}
-      {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingSchedule ? '✏️ Edit Schedule' : '➕ Add New Schedule'}</h2>
-              <button className="close-modal" onClick={() => setShowForm(false)}>✕</button>
-            </div>
+        {/* Modal Form */}
+        {showModal && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>{editingSchedule ? '✏️ Edit Schedule' : '➕ Add New Schedule'}</h2>
+                <button className="close-modal" onClick={closeModal}>✕</button>
+              </div>
             
             <form onSubmit={handleSubmit} className="schedule-form">
               <div className="form-grid">
@@ -462,12 +612,12 @@ const AdminSchedules = () => {
                 <button 
                   type="button" 
                   className="btn-secondary"
-                  onClick={() => setShowForm(false)}
+                  onClick={closeModal}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  {editingSchedule ? 'Update Schedule' : 'Add Schedule'}
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Saving...' : editingSchedule ? 'Update Schedule' : 'Create Schedule'}
                 </button>
               </div>
             </form>
@@ -477,23 +627,22 @@ const AdminSchedules = () => {
 
       {/* Schedules List */}
       <div className="schedules-container">
-        {schedules.length === 0 ? (
+        {loading && schedules.length === 0 ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Loading schedules...</p>
+          </div>
+        ) : filteredSchedules.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📅</div>
             <h3>No schedules found</h3>
             <p>
-              {filters.bus_id || filters.route_id || filters.is_active !== 'all'
-                ? 'Try adjusting your filters' 
+              {searchTerm || filters.bus_id || filters.route_id || filters.is_active !== 'all'
+                ? 'Try adjusting your search or filters' 
                 : 'Get started by adding your first schedule'}
             </p>
-            {!filters.bus_id && !filters.route_id && filters.is_active === 'all' && (
-              <button 
-                className="btn-primary"
-                onClick={() => {
-                  resetForm();
-                  setShowForm(true);
-                }}
-              >
+            {!searchTerm && !filters.bus_id && !filters.route_id && filters.is_active === 'all' && (
+              <button className="btn-primary" onClick={openAddModal}>
                 ➕ Add First Schedule
               </button>
             )}
@@ -508,6 +657,7 @@ const AdminSchedules = () => {
                   <th>Route</th>
                   <th>Departure</th>
                   <th>Arrival</th>
+                  <th>Duration</th>
                   <th>Price</th>
                   <th>Operating Days</th>
                   <th>Bookings</th>
@@ -516,7 +666,7 @@ const AdminSchedules = () => {
                 </tr>
               </thead>
               <tbody>
-                {schedules.map(schedule => (
+                {filteredSchedules.map(schedule => (
                   <tr key={schedule.schedule_id} className={!schedule.is_active ? 'inactive-row' : ''}>
                     <td>#{schedule.schedule_id}</td>
                     <td>
@@ -530,17 +680,20 @@ const AdminSchedules = () => {
                     </td>
                     <td>
                       <div className="route-info">
-                        {schedule.route}
+                        <strong>{schedule.origin} → {schedule.destination}</strong>
                         <div className="route-distance">{schedule.distance_km} km</div>
                       </div>
                     </td>
                     <td className="time-cell">
-                      <span className="time-badge">🕐 {schedule.departure_time}</span>
+                      <span className="time-badge">🕐 {formatTime(schedule.departure_time)}</span>
                     </td>
                     <td className="time-cell">
-                      <span className="time-badge">🕐 {schedule.arrival_time}</span>
+                      <span className="time-badge">🕐 {formatTime(schedule.arrival_time)}</span>
                     </td>
-                    <td className="price-cell">Rs. {schedule.price.toLocaleString()}</td>
+                    <td className="duration-cell">
+                      {calculateDuration(schedule.departure_time, schedule.arrival_time)}
+                    </td>
+                    <td className="price-cell">रू {schedule.price?.toLocaleString()}</td>
                     <td>
                       <div className="days-display">
                         {schedule.operating_days?.length === 7 ? (
@@ -572,7 +725,7 @@ const AdminSchedules = () => {
                       </button>
                       <button
                         className="btn-icon btn-toggle"
-                        onClick={() => toggleScheduleStatus(schedule)}
+                        onClick={() => toggleStatus(schedule)}
                         title={schedule.is_active ? 'Deactivate' : 'Activate'}
                       >
                         {schedule.is_active ? '🔴' : '🟢'}
@@ -597,7 +750,7 @@ const AdminSchedules = () => {
       {schedules.length > 0 && (
         <div className="summary-footer">
           <p>
-            Showing <strong>{schedules.length}</strong> schedule{schedules.length !== 1 ? 's' : ''}
+            Showing <strong>{filteredSchedules.length}</strong> of <strong>{schedules.length}</strong> schedule{schedules.length !== 1 ? 's' : ''}
             {' | '}
             Active: <strong>{schedules.filter(s => s.is_active).length}</strong>
             {' | '}
@@ -605,6 +758,7 @@ const AdminSchedules = () => {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };
