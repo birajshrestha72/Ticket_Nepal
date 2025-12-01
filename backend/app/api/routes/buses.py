@@ -429,3 +429,200 @@ async def get_bus_details(bus_id: int):
             }
         }
     }
+
+
+# ===== PROTECTED ENDPOINTS (Vendor/Admin) =====
+
+@router.post("/create", response_model=Dict)
+async def create_bus(
+    bus_data: Dict,
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
+):
+    """
+    Create a new bus
+    Vendors can create buses for themselves, admins can create for any vendor
+    """
+    try:
+        # Validate required fields
+        required_fields = ['bus_number', 'bus_type', 'total_seats', 'vendor_id']
+        for field in required_fields:
+            if field not in bus_data:
+                raise BadRequestException(f"Missing required field: {field}")
+        
+        # Check if vendor-owned bus (vendors can only create for themselves)
+        if current_user['role'] == 'vendor':
+            # Get vendor_id for this user
+            vendor_query = "SELECT vendor_id FROM vendors WHERE user_id = $1"
+            vendor_result = await database.fetch_one(vendor_query, current_user['id'])
+            if not vendor_result:
+                raise BadRequestException("Vendor profile not found")
+            if bus_data['vendor_id'] != vendor_result['vendor_id']:
+                raise BadRequestException("You can only create buses for your own company")
+        
+        # Check if bus number already exists
+        check_query = "SELECT bus_id FROM buses WHERE bus_number = $1"
+        existing = await database.fetch_one(check_query, bus_data['bus_number'])
+        if existing:
+            raise BadRequestException(f"Bus number {bus_data['bus_number']} already exists")
+        
+        # Insert bus
+        insert_query = """
+            INSERT INTO buses (
+                vendor_id, bus_number, bus_type, total_seats, available_seats,
+                amenities, registration_year, insurance_expiry, is_active
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        """
+        
+        bus = await database.fetch_one(
+            insert_query,
+            bus_data['vendor_id'],
+            bus_data['bus_number'],
+            bus_data['bus_type'],
+            bus_data['total_seats'],
+            bus_data.get('available_seats', bus_data['total_seats']),
+            bus_data.get('amenities', []),
+            bus_data.get('registration_year'),
+            bus_data.get('insurance_expiry'),
+            bus_data.get('is_active', True)
+        )
+        
+        return {
+            "status": "success",
+            "message": "Bus created successfully",
+            "data": {"bus": dict(bus)}
+        }
+        
+    except BadRequestException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create bus: {str(e)}")
+
+
+@router.put("/{bus_id}", response_model=Dict)
+async def update_bus(
+    bus_id: int,
+    bus_data: Dict,
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
+):
+    """
+    Update an existing bus
+    Vendors can only update their own buses
+    """
+    try:
+        # Check if bus exists
+        check_query = "SELECT * FROM buses WHERE bus_id = $1"
+        existing_bus = await database.fetch_one(check_query, bus_id)
+        if not existing_bus:
+            raise NotFoundException("Bus not found")
+        
+        # Check ownership for vendors
+        if current_user['role'] == 'vendor':
+            vendor_query = "SELECT vendor_id FROM vendors WHERE user_id = $1"
+            vendor_result = await database.fetch_one(vendor_query, current_user['id'])
+            if not vendor_result or vendor_result['vendor_id'] != existing_bus['vendor_id']:
+                raise BadRequestException("You can only update your own buses")
+        
+        # Build update query dynamically
+        update_fields = []
+        params = []
+        param_count = 1
+        
+        allowed_fields = ['bus_number', 'bus_type', 'total_seats', 'available_seats', 
+                         'amenities', 'registration_year', 'insurance_expiry', 'is_active']
+        
+        for field in allowed_fields:
+            if field in bus_data:
+                update_fields.append(f"{field} = ${param_count}")
+                params.append(bus_data[field])
+                param_count += 1
+        
+        if not update_fields:
+            raise BadRequestException("No fields to update")
+        
+        # Add updated_at
+        update_fields.append(f"updated_at = ${param_count}")
+        params.append(datetime.now())
+        param_count += 1
+        
+        # Add bus_id for WHERE clause
+        params.append(bus_id)
+        
+        update_query = f"""
+            UPDATE buses
+            SET {', '.join(update_fields)}
+            WHERE bus_id = ${param_count}
+            RETURNING *
+        """
+        
+        bus = await database.fetch_one(update_query, *params)
+        
+        return {
+            "status": "success",
+            "message": "Bus updated successfully",
+            "data": {"bus": dict(bus)}
+        }
+        
+    except (NotFoundException, BadRequestException):
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update bus: {str(e)}")
+
+
+@router.delete("/{bus_id}", response_model=Dict)
+async def delete_bus(
+    bus_id: int,
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
+):
+    """
+    Delete a bus (soft delete - set is_active to false)
+    Vendors can only delete their own buses
+    """
+    try:
+        # Check if bus exists
+        check_query = "SELECT * FROM buses WHERE bus_id = $1"
+        existing_bus = await database.fetch_one(check_query, bus_id)
+        if not existing_bus:
+            raise NotFoundException("Bus not found")
+        
+        # Check ownership for vendors
+        if current_user['role'] == 'vendor':
+            vendor_query = "SELECT vendor_id FROM vendors WHERE user_id = $1"
+            vendor_result = await database.fetch_one(vendor_query, current_user['id'])
+            if not vendor_result or vendor_result['vendor_id'] != existing_bus['vendor_id']:
+                raise BadRequestException("You can only delete your own buses")
+        
+        # Check if bus has active schedules
+        schedules_query = """
+            SELECT COUNT(*) as count 
+            FROM bus_schedules 
+            WHERE bus_id = $1 AND is_active = true
+        """
+        schedules_count = await database.fetch_one(schedules_query, bus_id)
+        
+        if schedules_count['count'] > 0:
+            raise BadRequestException(
+                f"Cannot delete bus. {schedules_count['count']} active schedules are using this bus. "
+                "Deactivate all schedules first."
+            )
+        
+        # Soft delete
+        delete_query = """
+            UPDATE buses
+            SET is_active = false, updated_at = $1
+            WHERE bus_id = $2
+            RETURNING bus_id
+        """
+        
+        await database.fetch_one(delete_query, datetime.now(), bus_id)
+        
+        return {
+            "status": "success",
+            "message": "Bus deleted successfully"
+        }
+        
+    except (NotFoundException, BadRequestException):
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete bus: {str(e)}")

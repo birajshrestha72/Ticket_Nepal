@@ -11,16 +11,17 @@ const Billing = () => {
   const [showInvoice, setShowInvoice] = useState(false);
   const invoiceRef = useRef();
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+
   // Filter states
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    dateFrom: '',
-    dateTo: '',
-    paymentMethod: 'all',
-    status: 'all',
-    minAmount: '',
-    maxAmount: '',
-    busNumber: ''
+    dateFrom: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    dateTo: new Date().toISOString().split('T')[0],
+    paymentStatus: 'all',
+    busId: ''
   });
 
   // Summary stats
@@ -32,98 +33,9 @@ const Billing = () => {
     refundedTransactions: 0
   });
 
-  // Sample transactions data (replace with API call)
-  const sampleTransactions = [
-    {
-      transaction_id: 'TXN-20251121-001',
-      booking_id: 'BK-001',
-      customer_name: 'John Doe',
-      customer_phone: '9841234567',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Kathmandu → Pokhara',
-      seats: ['A1', 'A2'],
-      seat_count: 2,
-      price_per_seat: 1200,
-      total_amount: 2400,
-      payment_method: 'eSewa',
-      payment_status: 'completed',
-      booking_date: '2025-11-21T10:30:00',
-      travel_date: '2025-11-25',
-      transaction_date: '2025-11-21T10:30:00'
-    },
-    {
-      transaction_id: 'TXN-20251121-002',
-      booking_id: 'BK-002',
-      customer_name: 'Jane Smith',
-      customer_phone: '9847654321',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Pokhara → Chitwan',
-      seats: ['B3'],
-      seat_count: 1,
-      price_per_seat: 800,
-      total_amount: 800,
-      payment_method: 'Khalti',
-      payment_status: 'completed',
-      booking_date: '2025-11-21T11:15:00',
-      travel_date: '2025-11-26',
-      transaction_date: '2025-11-21T11:15:00'
-    },
-    {
-      transaction_id: 'TXN-20251121-003',
-      booking_id: 'BK-003',
-      customer_name: 'Ram Sharma',
-      customer_phone: '9801112233',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Kathmandu → Butwal',
-      seats: ['C5', 'C6', 'C7'],
-      seat_count: 3,
-      price_per_seat: 1500,
-      total_amount: 4500,
-      payment_method: 'Bank Transfer',
-      payment_status: 'pending',
-      booking_date: '2025-11-20T14:20:00',
-      travel_date: '2025-11-28',
-      transaction_date: '2025-11-20T14:20:00'
-    },
-    {
-      transaction_id: 'TXN-20251120-004',
-      booking_id: 'BK-004',
-      customer_name: 'Sita Gurung',
-      customer_phone: '9823445566',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Kathmandu → Dharan',
-      seats: ['D1', 'D2'],
-      seat_count: 2,
-      price_per_seat: 1800,
-      total_amount: 3600,
-      payment_method: 'Cash',
-      payment_status: 'completed',
-      booking_date: '2025-11-20T09:00:00',
-      travel_date: '2025-11-24',
-      transaction_date: '2025-11-20T09:00:00'
-    },
-    {
-      transaction_id: 'TXN-20251119-005',
-      booking_id: 'BK-005',
-      customer_name: 'Hari Thapa',
-      customer_phone: '9812334455',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Pokhara → Kathmandu',
-      seats: ['A5'],
-      seat_count: 1,
-      price_per_seat: 1200,
-      total_amount: 1200,
-      payment_method: 'eSewa',
-      payment_status: 'refunded',
-      booking_date: '2025-11-19T16:45:00',
-      travel_date: '2025-11-22',
-      transaction_date: '2025-11-19T16:45:00'
-    }
-  ];
-
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [currentPage, itemsPerPage, filters]);
 
   useEffect(() => {
     calculateStats();
@@ -131,34 +43,100 @@ const Billing = () => {
 
   const fetchTransactions = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // In production, replace with actual API call
-      // const token = localStorage.getItem('token');
-      // const response = await fetch(`${API_URL}/transactions/vendor`, {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setTransactions(data.data?.transactions || []);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        limit: itemsPerPage.toString(),
+        offset: ((currentPage - 1) * itemsPerPage).toString()
+      });
+
+      // Add date filters
+      if (filters.dateFrom) {
+        params.append('date_from', filters.dateFrom);
+      }
+      if (filters.dateTo) {
+        params.append('date_to', filters.dateTo);
+      }
+
+      // Add status filter
+      if (filters.paymentStatus && filters.paymentStatus !== 'all') {
+        params.append('status', filters.paymentStatus);
+      }
+
+      // Add bus filter
+      if (filters.busId) {
+        params.append('bus_id', filters.busId);
+      }
+
+      const response = await fetch(`${API_URL}/bookings/vendor/all?${params}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to fetch transactions');
+      }
+
+      const data = await response.json();
       
-      // Simulated API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setTransactions(sampleTransactions);
+      if (data.status === 'success' && data.data) {
+        const bookings = data.data.bookings || [];
+        
+        // Transform bookings to transaction format
+        const transformedTransactions = bookings.map(booking => ({
+          transaction_id: booking.booking_reference || `BK-${booking.booking_id}`,
+          booking_id: booking.booking_id,
+          customer_name: booking.customer?.name || 'N/A',
+          customer_phone: booking.customer?.phone || 'N/A',
+          customer_email: booking.customer?.email || 'N/A',
+          bus_number: booking.bus?.bus_number || 'N/A',
+          bus_type: booking.bus?.bus_type || 'N/A',
+          route: `${booking.route?.origin || 'N/A'} → ${booking.route?.destination || 'N/A'}`,
+          seats: booking.seat_numbers || [],
+          seat_count: booking.seat_numbers?.length || 0,
+          price_per_seat: booking.seat_numbers?.length > 0 ? booking.total_amount / booking.seat_numbers.length : 0,
+          total_amount: booking.total_amount || 0,
+          payment_method: booking.payment_method || 'N/A',
+          payment_status: booking.payment_status || 'pending',
+          booking_status: booking.status || 'pending',
+          booking_date: booking.created_at,
+          travel_date: booking.journey_date,
+          departure_time: booking.departure_time,
+          arrival_time: booking.arrival_time,
+          transaction_date: booking.created_at
+        }));
+
+        setTransactions(transformedTransactions);
+        setTotalItems(data.data.total || 0);
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (err) {
       console.error('Error fetching transactions:', err);
       setError(err.message);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
   };
 
   const calculateStats = () => {
-    const completed = transactions.filter(t => t.payment_status === 'completed');
+    const completed = transactions.filter(t => t.payment_status === 'completed' || t.payment_status === 'paid');
     const pending = transactions.filter(t => t.payment_status === 'pending');
     const refunded = transactions.filter(t => t.payment_status === 'refunded');
     
     setStats({
       totalTransactions: transactions.length,
-      totalRevenue: completed.reduce((sum, t) => sum + t.total_amount, 0),
+      totalRevenue: completed.reduce((sum, t) => sum + (t.total_amount || 0), 0),
       completedTransactions: completed.length,
       pendingTransactions: pending.length,
       refundedTransactions: refunded.length
@@ -167,72 +145,39 @@ const Billing = () => {
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const applyFilters = () => {
+    setCurrentPage(1);
+    fetchTransactions();
   };
 
   const resetFilters = () => {
     setFilters({
-      searchTerm: '',
-      dateFrom: '',
-      dateTo: '',
-      paymentMethod: 'all',
-      status: 'all',
-      minAmount: '',
-      maxAmount: '',
-      busNumber: ''
+      dateFrom: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+      dateTo: new Date().toISOString().split('T')[0],
+      paymentStatus: 'all',
+      busId: ''
     });
+    setCurrentPage(1);
   };
 
-  const applyFilters = () => {
-    return transactions.filter(transaction => {
-      // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const matchesSearch = 
-          transaction.transaction_id.toLowerCase().includes(searchLower) ||
-          transaction.customer_name.toLowerCase().includes(searchLower) ||
-          transaction.customer_phone.includes(searchLower) ||
-          transaction.booking_id.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
+  // Pagination calculations
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-      // Date range filter
-      if (filters.dateFrom) {
-        const transactionDate = new Date(transaction.transaction_date).toISOString().split('T')[0];
-        if (transactionDate < filters.dateFrom) return false;
-      }
-      if (filters.dateTo) {
-        const transactionDate = new Date(transaction.transaction_date).toISOString().split('T')[0];
-        if (transactionDate > filters.dateTo) return false;
-      }
-
-      // Payment method filter
-      if (filters.paymentMethod !== 'all' && transaction.payment_method !== filters.paymentMethod) {
-        return false;
-      }
-
-      // Status filter
-      if (filters.status !== 'all' && transaction.payment_status !== filters.status) {
-        return false;
-      }
-
-      // Amount range filter
-      if (filters.minAmount && transaction.total_amount < parseFloat(filters.minAmount)) {
-        return false;
-      }
-      if (filters.maxAmount && transaction.total_amount > parseFloat(filters.maxAmount)) {
-        return false;
-      }
-
-      // Bus number filter
-      if (filters.busNumber && !transaction.bus_number.toLowerCase().includes(filters.busNumber.toLowerCase())) {
-        return false;
-      }
-
-      return true;
-    });
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
   };
 
-  const filteredTransactions = applyFilters();
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   const handleViewInvoice = (transaction) => {
     setSelectedTransaction(transaction);
@@ -245,7 +190,7 @@ const Billing = () => {
 
   const handleDownloadCSV = () => {
     const headers = ['Transaction ID', 'Customer', 'Phone', 'Bus', 'Route', 'Seats', 'Amount', 'Payment Method', 'Status', 'Date'];
-    const rows = filteredTransactions.map(t => [
+    const rows = transactions.map(t => [
       t.transaction_id,
       t.customer_name,
       t.customer_phone,
@@ -265,6 +210,7 @@ const Billing = () => {
     a.href = url;
     a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const formatDate = (dateString) => {
@@ -280,6 +226,7 @@ const Billing = () => {
   const getStatusBadge = (status) => {
     const statusConfig = {
       completed: { class: 'status-completed', label: 'Completed', icon: '✓' },
+      paid: { class: 'status-completed', label: 'Paid', icon: '✓' },
       pending: { class: 'status-pending', label: 'Pending', icon: '⏳' },
       refunded: { class: 'status-refunded', label: 'Refunded', icon: '↩️' },
       failed: { class: 'status-failed', label: 'Failed', icon: '✗' }
@@ -299,6 +246,21 @@ const Billing = () => {
         <div className="loading-container">
           <div className="spinner"></div>
           <p>Loading transactions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="billing-page">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <h3>Error Loading Transactions</h3>
+          <p>{error}</p>
+          <button className="btn-retry" onClick={fetchTransactions}>
+            🔄 Retry
+          </button>
         </div>
       </div>
     );
@@ -363,17 +325,6 @@ const Billing = () => {
 
         <div className="filters-grid">
           <div className="filter-group">
-            <label>Search</label>
-            <input
-              type="text"
-              placeholder="Transaction ID, customer, phone..."
-              value={filters.searchTerm}
-              onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-              className="filter-input"
-            />
-          </div>
-
-          <div className="filter-group">
             <label>Date From</label>
             <input
               type="date"
@@ -394,28 +345,14 @@ const Billing = () => {
           </div>
 
           <div className="filter-group">
-            <label>Payment Method</label>
+            <label>Payment Status</label>
             <select
-              value={filters.paymentMethod}
-              onChange={(e) => handleFilterChange('paymentMethod', e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Methods</option>
-              <option value="eSewa">eSewa</option>
-              <option value="Khalti">Khalti</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Cash">Cash</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              value={filters.paymentStatus}
+              onChange={(e) => handleFilterChange('paymentStatus', e.target.value)}
               className="filter-select"
             >
               <option value="all">All Status</option>
+              <option value="paid">Paid</option>
               <option value="completed">Completed</option>
               <option value="pending">Pending</option>
               <option value="refunded">Refunded</option>
@@ -424,36 +361,20 @@ const Billing = () => {
           </div>
 
           <div className="filter-group">
-            <label>Min Amount</label>
-            <input
-              type="number"
-              placeholder="0"
-              value={filters.minAmount}
-              onChange={(e) => handleFilterChange('minAmount', e.target.value)}
-              className="filter-input"
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Max Amount</label>
-            <input
-              type="number"
-              placeholder="999999"
-              value={filters.maxAmount}
-              onChange={(e) => handleFilterChange('maxAmount', e.target.value)}
-              className="filter-input"
-            />
-          </div>
-
-          <div className="filter-group">
-            <label>Bus Number</label>
+            <label>Bus ID (Optional)</label>
             <input
               type="text"
-              placeholder="e.g., BA 2 KHA 1234"
-              value={filters.busNumber}
-              onChange={(e) => handleFilterChange('busNumber', e.target.value)}
+              placeholder="Enter bus ID"
+              value={filters.busId}
+              onChange={(e) => handleFilterChange('busId', e.target.value)}
               className="filter-input"
             />
+          </div>
+
+          <div className="filter-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button onClick={applyFilters} className="btn-apply-filter">
+              Apply Filters
+            </button>
           </div>
         </div>
       </div>
@@ -462,73 +383,156 @@ const Billing = () => {
       <div className="transactions-container">
         <div className="transactions-header">
           <h3>📋 Transactions List</h3>
-          <p className="results-count">
-            Showing <strong>{filteredTransactions.length}</strong> of <strong>{transactions.length}</strong> transactions
-          </p>
+          <div className="transactions-controls">
+            <p className="results-count">
+              Showing <strong>{startItem}</strong> to <strong>{endItem}</strong> of <strong>{totalItems}</strong> transactions
+            </p>
+            <div className="per-page-selector">
+              <label>Items per page:</label>
+              <select 
+                value={itemsPerPage} 
+                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                className="per-page-select"
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        {filteredTransactions.length === 0 ? (
+        {transactions.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📭</div>
             <h3>No transactions found</h3>
             <p>Try adjusting your filters or check back later</p>
           </div>
         ) : (
-          <div className="table-wrapper">
-            <table className="transactions-table">
-              <thead>
-                <tr>
-                  <th>Transaction ID</th>
-                  <th>Customer</th>
-                  <th>Bus & Route</th>
-                  <th>Seats</th>
-                  <th>Amount</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTransactions.map(transaction => (
-                  <tr key={transaction.transaction_id}>
-                    <td className="transaction-id">{transaction.transaction_id}</td>
-                    <td>
-                      <div className="customer-info">
-                        <div className="customer-name">{transaction.customer_name}</div>
-                        <div className="customer-phone">{transaction.customer_phone}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="bus-info">
-                        <div className="bus-number">{transaction.bus_number}</div>
-                        <div className="route">{transaction.route}</div>
-                      </div>
-                    </td>
-                    <td className="seats-info">
-                      <span className="seat-badge">{transaction.seat_count} seat{transaction.seat_count > 1 ? 's' : ''}</span>
-                      <div className="seat-numbers">{transaction.seats.join(', ')}</div>
-                    </td>
-                    <td className="amount">Rs. {transaction.total_amount.toLocaleString()}</td>
-                    <td>
-                      <span className="payment-method">{transaction.payment_method}</span>
-                    </td>
-                    <td>{getStatusBadge(transaction.payment_status)}</td>
-                    <td className="date-info">{formatDate(transaction.transaction_date)}</td>
-                    <td>
-                      <button
-                        className="btn-view-invoice"
-                        onClick={() => handleViewInvoice(transaction)}
-                        title="View Invoice"
-                      >
-                        📄
-                      </button>
-                    </td>
+          <>
+            <div className="table-wrapper">
+              <table className="transactions-table">
+                <thead>
+                  <tr>
+                    <th>Transaction ID</th>
+                    <th>Customer</th>
+                    <th>Bus & Route</th>
+                    <th>Seats</th>
+                    <th>Amount</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {transactions.map(transaction => (
+                    <tr key={transaction.transaction_id}>
+                      <td className="transaction-id">{transaction.transaction_id}</td>
+                      <td>
+                        <div className="customer-info">
+                          <div className="customer-name">{transaction.customer_name}</div>
+                          <div className="customer-phone">{transaction.customer_phone}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="bus-info">
+                          <div className="bus-number">{transaction.bus_number}</div>
+                          <div className="route">{transaction.route}</div>
+                        </div>
+                      </td>
+                      <td className="seats-info">
+                        <span className="seat-badge">{transaction.seat_count} seat{transaction.seat_count > 1 ? 's' : ''}</span>
+                        <div className="seat-numbers">{transaction.seats.join(', ')}</div>
+                      </td>
+                      <td className="amount">Rs. {transaction.total_amount.toLocaleString()}</td>
+                      <td>
+                        <span className="payment-method">{transaction.payment_method}</span>
+                      </td>
+                      <td>{getStatusBadge(transaction.payment_status)}</td>
+                      <td className="date-info">{formatDate(transaction.transaction_date)}</td>
+                      <td>
+                        <button
+                          className="btn-view-invoice"
+                          onClick={() => handleViewInvoice(transaction)}
+                          title="View Invoice"
+                        >
+                          📄
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="pagination-container">
+              <div className="pagination-info">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="pagination-controls">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  title="First Page"
+                >
+                  «
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  title="Previous Page"
+                >
+                  ‹
+                </button>
+                
+                {/* Page numbers */}
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        className={`pagination-btn ${pageNum === currentPage ? 'active' : ''}`}
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  } else if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                    return <span key={pageNum} className="pagination-ellipsis">...</span>;
+                  }
+                  return null;
+                })}
+
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  title="Next Page"
+                >
+                  ›
+                </button>
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  title="Last Page"
+                >
+                  »
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

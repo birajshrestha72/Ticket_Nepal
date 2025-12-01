@@ -105,7 +105,7 @@ const AdminSchedules = () => {
   const fetchBuses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/buses/vendor`, {
+      const response = await fetch(`${API_URL}/buses/all-types`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -115,7 +115,22 @@ const AdminSchedules = () => {
       if (!response.ok) throw new Error('Failed to fetch buses');
       
       const data = await response.json();
-      setBuses(data.data?.buses || []);
+      
+      // Extract buses from grouped busesByType
+      const busesByType = data.data?.busesByType || {};
+      const allBuses = [];
+      Object.values(busesByType).forEach(busArray => {
+        busArray.forEach(bus => {
+          allBuses.push({
+            bus_id: bus.id,
+            bus_number: bus.bus_number,
+            bus_type: bus.bus_type,
+            total_seats: bus.total_seats
+          });
+        });
+      });
+      
+      setBuses(allBuses);
     } catch (err) {
       console.error('Error fetching buses:', err);
     }
@@ -450,8 +465,8 @@ const AdminSchedules = () => {
               className="filter-select"
             >
               <option value="">All Buses</option>
-              {buses.map(bus => (
-                <option key={bus.bus_id} value={bus.bus_id}>
+              {buses.map((bus, index) => (
+                <option key={`${bus.bus_id}-${index}`} value={bus.bus_id}>
                   {bus.bus_number} - {bus.bus_type}
                 </option>
               ))}

@@ -271,10 +271,16 @@ async def get_my_bookings(
     try:
         user_id = current_user.get("id")
         
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User ID not found in token"
+            )
+        
         # Query to fetch all bookings for the user with related data
         query = """
             SELECT 
-                b.id,
+                b.booking_id as id,
                 b.booking_reference as "bookingReference",
                 b.journey_date as "journeyDate",
                 b.number_of_seats as "numberOfSeats",
@@ -359,7 +365,12 @@ async def get_my_bookings(
             "message": f"Found {len(bookings_list)} booking(s)"
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        print(f"Error in get_my_bookings: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch bookings: {str(e)}"
@@ -488,7 +499,7 @@ async def cancel_booking(
 
 @router.get("/vendor/all")
 async def get_vendor_bookings(
-    current_user: Dict = Depends(require_role(["vendor", "system_admin"])),
+    current_user: Dict = Depends(require_role("vendor", "system_admin")),
     status_filter: Optional[str] = Query(None, description="Filter by status", alias="status"),
     bus_id: Optional[int] = Query(None, description="Filter by bus"),
     date_from: Optional[str] = Query(None, description="Filter from date (YYYY-MM-DD)"),

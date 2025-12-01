@@ -71,5 +71,5 @@ async def test_connection():
         result = await database.fetch_one("SELECT version();")
         print(f"📊 PostgreSQL version: {result['version'][:50]}...")
     except Exception as e:
-        print(f"❌ Database connection error: {e}")
+        print(f"Database connection error: {e}")
         raise

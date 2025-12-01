@@ -16,16 +16,19 @@ const AdminBuses = () => {
   
   // Form state
   const [formData, setFormData] = useState({
+    vendor_id: null,
     bus_number: '',
-    bus_type: 'Standard',
+    bus_type: 'AC',
     total_seats: 40,
     available_seats: 40,
-    is_active: true,
-    facilities: []
+    amenities: [],
+    registration_year: new Date().getFullYear(),
+    insurance_expiry: '',
+    is_active: true
   });
 
-  const busTypes = ['Standard', 'Deluxe', 'Super Deluxe', 'AC', 'Non-AC', 'Sleeper'];
-  const facilitiesList = ['AC', 'WiFi', 'Charging Port', 'Entertainment', 'Snacks', 'Water', 'Blanket', 'Pillow'];
+  const busTypes = ['AC', 'Non-AC', 'Deluxe', 'Semi-Deluxe', 'Sleeper', 'Seater'];
+  const facilitiesList = ['AC', 'WiFi', 'Charging Port', 'TV', 'Restroom', 'Entertainment', 'Snacks', 'Water', 'Blanket', 'Pillow', 'Music System'];
 
   useEffect(() => {
     fetchBuses();
@@ -38,14 +41,8 @@ const AdminBuses = () => {
       const token = localStorage.getItem('token');
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      let endpoint = `${API_URL}/buses/all`;
-      
-      // If vendor, fetch only their buses
-      if (user.role === 'vendor') {
-        endpoint = `${API_URL}/buses/vendor`;
-      }
-
-      const response = await fetch(endpoint, {
+      // Use /buses/all-types endpoint which returns all buses grouped by type
+      const response = await fetch(`${API_URL}/buses/all-types`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -57,7 +54,87 @@ const AdminBuses = () => {
       }
 
       const data = await response.json();
-      setBuses(data.data?.buses || []);
+      
+      // Extract all buses from grouped response
+      const busesByType = data.data?.busesByType || {};
+      const allBuses = [];
+      
+      Object.keys(busesByType).forEach(type => {
+        busesByType[type].forEach(bus => {
+          allBuses.push({
+            bus_id: bus.id,
+            bus_number: bus.busNumber,
+            bus_type: bus.busType || type,
+            total_seats: bus.seats,
+            available_seats: bus.availableSeats,
+            amenities: bus.amenities || [],
+            vendor_id: bus.vendorId,
+            vendor_name: bus.vendor,
+            vendor_email: bus.vendorEmail || '',
+            is_active: true // Assuming all fetched buses are active
+          });
+        });
+      });
+      
+      console.log('All buses fetched:', allBuses.length);
+      console.log('User details:', user);
+      
+      // Get vendor_id from vendors table
+      let vendorId = null;
+      if (user.role === 'vendor') {
+        try {
+          const vendorResponse = await fetch(`${API_URL}/vendors/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (vendorResponse.ok) {
+            const vendorData = await vendorResponse.json();
+            vendorId = vendorData.data?.vendor?.vendor_id;
+            console.log('Vendor ID from API:', vendorId);
+          }
+        } catch (err) {
+          console.error('Error fetching vendor profile:', err);
+        }
+      }
+      
+      // Filter buses for vendors
+      let filteredBuses = allBuses;
+      if (user.role === 'vendor') {
+        const uniqueVendorIds = [...new Set(allBuses.map(bus => bus.vendor_id))];
+        console.log('Unique vendor_ids in buses:', uniqueVendorIds);
+        
+        // Smart filtering with fallbacks
+        if (vendorId) {
+          // Primary: Match vendor_id
+          filteredBuses = allBuses.filter(bus => bus.vendor_id === vendorId);
+          console.log(`Filtered by vendor_id ${vendorId}: ${filteredBuses.length} buses`);
+        } else if (user.email) {
+          // Fallback 1: Match email
+          filteredBuses = allBuses.filter(bus => 
+            bus.vendor_email && bus.vendor_email.toLowerCase() === user.email.toLowerCase()
+          );
+          console.log(`Filtered by email ${user.email}: ${filteredBuses.length} buses`);
+        } else if (user.id) {
+          // Fallback 2: Match user.id with vendor_id
+          filteredBuses = allBuses.filter(bus => bus.vendor_id === user.id);
+          console.log(`Filtered by user.id ${user.id}: ${filteredBuses.length} buses`);
+        }
+        
+        if (filteredBuses.length === 0) {
+          console.warn('No buses found for vendor. Vendor may not have any buses yet.');
+        }
+      }
+      
+      // Store vendor_id in form data for new bus creation
+      if (vendorId) {
+        setFormData(prev => ({ ...prev, vendor_id: vendorId }));
+      } else if (user.id && user.role === 'vendor') {
+        setFormData(prev => ({ ...prev, vendor_id: user.id }));
+      }
+      
+      setBuses(filteredBuses);
     } catch (err) {
       console.error('Error fetching buses:', err);
       setError(err.message);
@@ -88,6 +165,14 @@ const AdminBuses = () => {
     setError(null);
     
     try {
+      // Validate required fields
+      if (!formData.vendor_id) {
+        throw new Error('Vendor ID is required');
+      }
+      if (!formData.bus_number || !formData.bus_type) {
+        throw new Error('Bus number and type are required');
+      }
+      
       const token = localStorage.getItem('token');
       const url = editingBus 
         ? `${API_URL}/buses/${editingBus.bus_id}`
@@ -95,13 +180,28 @@ const AdminBuses = () => {
       
       const method = editingBus ? 'PUT' : 'POST';
       
+      // Prepare data for submission
+      const submitData = {
+        vendor_id: formData.vendor_id,
+        bus_number: formData.bus_number.trim(),
+        bus_type: formData.bus_type,
+        total_seats: parseInt(formData.total_seats) || 40,
+        available_seats: parseInt(formData.available_seats) || parseInt(formData.total_seats) || 40,
+        amenities: formData.amenities || [],
+        registration_year: parseInt(formData.registration_year) || new Date().getFullYear(),
+        insurance_expiry: formData.insurance_expiry || null,
+        is_active: formData.is_active !== false
+      };
+      
+      console.log('Submitting bus data:', submitData);
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (!response.ok) {
@@ -109,30 +209,39 @@ const AdminBuses = () => {
         throw new Error(errorData.detail || 'Failed to save bus');
       }
 
+      const result = await response.json();
+      console.log('Bus saved successfully:', result);
+      
       await fetchBuses();
       resetForm();
       setShowForm(false);
+      alert(editingBus ? 'Bus updated successfully!' : 'Bus created successfully!');
     } catch (err) {
       console.error('Error saving bus:', err);
       setError(err.message);
+      alert('Error: ' + err.message);
     }
   };
 
   const handleEdit = (bus) => {
+    console.log('Editing bus:', bus);
     setEditingBus(bus);
     setFormData({
+      vendor_id: bus.vendor_id,
       bus_number: bus.bus_number || '',
-      bus_type: bus.bus_type || 'Standard',
+      bus_type: bus.bus_type || 'AC',
       total_seats: bus.total_seats || 40,
       available_seats: bus.available_seats || 40,
-      is_active: bus.is_active !== undefined ? bus.is_active : true,
-      facilities: bus.facilities || []
+      amenities: bus.amenities || [],
+      registration_year: bus.registration_year || new Date().getFullYear(),
+      insurance_expiry: bus.insurance_expiry || '',
+      is_active: bus.is_active !== undefined ? bus.is_active : true
     });
     setShowForm(true);
   };
 
   const handleDelete = async (busId) => {
-    if (!window.confirm('Are you sure you want to delete this bus?')) {
+    if (!window.confirm('Are you sure you want to delete this bus? This action cannot be undone.')) {
       return;
     }
 
@@ -141,18 +250,22 @@ const AdminBuses = () => {
       const response = await fetch(`${API_URL}/buses/${busId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete bus');
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete bus');
       }
 
+      alert('Bus deleted successfully!');
       await fetchBuses();
     } catch (err) {
       console.error('Error deleting bus:', err);
       setError(err.message);
+      alert('Error: ' + err.message);
     }
   };
 
@@ -183,15 +296,20 @@ const AdminBuses = () => {
   };
 
   const resetForm = () => {
+    const currentVendorId = formData.vendor_id; // Preserve vendor_id
     setFormData({
+      vendor_id: currentVendorId,
       bus_number: '',
-      bus_type: 'Standard',
+      bus_type: 'AC',
       total_seats: 40,
       available_seats: 40,
-      is_active: true,
-      facilities: []
+      amenities: [],
+      registration_year: new Date().getFullYear(),
+      insurance_expiry: '',
+      is_active: true
     });
     setEditingBus(null);
+    setError(null);
   };
 
   const filteredBuses = buses.filter(bus => {
@@ -202,6 +320,11 @@ const AdminBuses = () => {
                          (filterStatus === 'inactive' && !bus.is_active);
     return matchesSearch && matchesStatus;
   });
+  
+  console.log('Buses state:', buses);
+  console.log('Filtered buses:', filteredBuses);
+  console.log('Search term:', searchTerm);
+  console.log('Filter status:', filterStatus);
 
   if (loading) {
     return (
@@ -341,6 +464,53 @@ const AdminBuses = () => {
                     required
                   />
                 </div>
+
+                <div className="form-group">
+                  <label>Registration Year</label>
+                  <input
+                    type="number"
+                    name="registration_year"
+                    value={formData.registration_year}
+                    onChange={handleInputChange}
+                    min="1990"
+                    max={new Date().getFullYear() + 1}
+                    placeholder={new Date().getFullYear().toString()}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Insurance Expiry</label>
+                  <input
+                    type="date"
+                    name="insurance_expiry"
+                    value={formData.insurance_expiry}
+                    onChange={handleInputChange}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Amenities</label>
+                <div className="amenities-grid">
+                  {facilitiesList.map(facility => (
+                    <label key={facility} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.amenities.includes(facility)}
+                        onChange={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            amenities: prev.amenities.includes(facility)
+                              ? prev.amenities.filter(f => f !== facility)
+                              : [...prev.amenities, facility]
+                          }));
+                        }}
+                      />
+                      <span>{facility}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="form-group">
@@ -353,22 +523,6 @@ const AdminBuses = () => {
                   />
                   <span>Active (available for bookings)</span>
                 </label>
-              </div>
-
-              <div className="form-group">
-                <label>Facilities</label>
-                <div className="facilities-grid">
-                  {facilitiesList.map(facility => (
-                    <label key={facility} className="facility-chip">
-                      <input
-                        type="checkbox"
-                        checked={formData.facilities.includes(facility)}
-                        onChange={() => handleFacilityToggle(facility)}
-                      />
-                      <span>{facility}</span>
-                    </label>
-                  ))}
-                </div>
               </div>
 
               <div className="form-actions">
@@ -439,12 +593,18 @@ const AdminBuses = () => {
                       <span className="label">Seats:</span>
                       <span className="value">{bus.available_seats}/{bus.total_seats} available</span>
                     </div>
+                    {bus.vendor_name && (
+                      <div className="info-item">
+                        <span className="label">Vendor:</span>
+                        <span className="value">{bus.vendor_name}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {bus.facilities && bus.facilities.length > 0 && (
+                  {bus.amenities && bus.amenities.length > 0 && (
                     <div className="facilities">
-                      {bus.facilities.map((facility, idx) => (
-                        <span key={idx} className="facility-tag">{facility}</span>
+                      {bus.amenities.map((amenity, idx) => (
+                        <span key={idx} className="facility-tag">{amenity}</span>
                       ))}
                     </div>
                   )}

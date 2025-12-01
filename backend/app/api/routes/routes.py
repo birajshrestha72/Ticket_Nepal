@@ -281,7 +281,7 @@ async def get_route_details(route_id: int):
 @router.post("/create", response_model=Dict)
 async def create_route(
     route_data: Dict,
-    current_user: Dict = Depends(require_role(["system_admin", "vendor"]))
+    current_user: Dict = Depends(require_role("system_admin", "vendor"))
 ):
     """
     Create a new route
@@ -366,7 +366,7 @@ async def create_route(
 async def update_route(
     route_id: int,
     route_data: Dict,
-    current_user: Dict = Depends(require_role(["system_admin", "vendor"]))
+    current_user: Dict = Depends(require_role("system_admin", "vendor"))
 ):
     """
     Update an existing route
@@ -442,7 +442,7 @@ async def update_route(
 @router.delete("/{route_id}", response_model=Dict)
 async def delete_route(
     route_id: int,
-    current_user: Dict = Depends(require_role(["system_admin"]))
+    current_user: Dict = Depends(require_role("system_admin"))
 ):
     """
     Delete a route (soft delete - set is_active to false)

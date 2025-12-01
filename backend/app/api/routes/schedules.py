@@ -325,7 +325,7 @@ async def get_seat_availability(
 
 @router.get("/vendor/all", response_model=Dict)
 async def get_vendor_schedules(
-    current_user: Dict = Depends(require_role(["vendor", "system_admin"])),
+    current_user: Dict = Depends(require_role("vendor", "system_admin")),
     bus_id: Optional[int] = Query(None, description="Filter by bus"),
     route_id: Optional[int] = Query(None, description="Filter by route"),
     is_active: Optional[bool] = Query(None, description="Filter by active status")
@@ -410,6 +410,8 @@ async def get_vendor_schedules(
                 "created_at": row['created_at'].isoformat() if row['created_at'] else None,
                 "bus_number": row['bus_number'],
                 "bus_type": row['bus_type'],
+                "origin": row['origin'],
+                "destination": row['destination'],
                 "route": f"{row['origin']} → {row['destination']}",
                 "distance_km": float(row['distance_km']) if row['distance_km'] else 0.0,
                 "vendor_name": row['vendor_name'],
@@ -434,7 +436,7 @@ async def get_vendor_schedules(
 @router.post("/create", response_model=Dict)
 async def create_schedule(
     schedule_data: Dict,
-    current_user: Dict = Depends(require_role(["vendor", "system_admin"]))
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
 ):
     """
     Create a new bus schedule
@@ -543,7 +545,7 @@ async def create_schedule(
 async def update_schedule(
     schedule_id: int,
     schedule_data: Dict,
-    current_user: Dict = Depends(require_role(["vendor", "system_admin"]))
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
 ):
     """
     Update an existing schedule
@@ -632,7 +634,7 @@ async def update_schedule(
 @router.delete("/{schedule_id}", response_model=Dict)
 async def delete_schedule(
     schedule_id: int,
-    current_user: Dict = Depends(require_role(["vendor", "system_admin"]))
+    current_user: Dict = Depends(require_role("vendor", "system_admin"))
 ):
     """
     Delete a schedule (soft delete - set is_active to false)

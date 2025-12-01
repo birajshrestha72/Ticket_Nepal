@@ -2,30 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../css/vendorBookings.css';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
 const VendorBookings = () => {
   const navigate = useNavigate();
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
   // State
   const [bookings, setBookings] = useState([]);
   const [buses, setBuses] = useState([]);
+  const [routes, setRoutes] = useState([]);
+  const [schedules, setSchedules] = useState([]);
+  const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   // Filters
   const [filters, setFilters] = useState({
     status: '',
     bus_id: '',
     date_from: '',
-    date_to: ''
+    date_to: '',
+    search: ''
   });
-
-  // Search
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Modal
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
 
   // Pagination
   const [pagination, setPagination] = useState({
@@ -33,6 +32,36 @@ const VendorBookings = () => {
     offset: 0,
     total: 0
   });
+
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [editingBooking, setEditingBooking] = useState(null);
+
+  // Create booking form state
+  const [bookingStep, setBookingStep] = useState(1);
+  const [createForm, setCreateForm] = useState({
+    origin: '',
+    destination: '',
+    journey_date: '',
+    schedule_id: '',
+    passenger_name: '',
+    passenger_phone: '',
+    passenger_email: '',
+    seat_numbers: [],
+    pickup_point: '',
+    total_amount: 0,
+    payment_method: 'cash',
+    payment_status: 'completed'
+  });
+
+  // Seat selection
+  const [availableSeats, setAvailableSeats] = useState([]);
+  const [bookedSeats, setBookedSeats] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
 
   // Stats
   const [stats, setStats] = useState({

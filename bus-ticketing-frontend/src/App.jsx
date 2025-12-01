@@ -12,6 +12,8 @@ import Search from './pages/common/Search.jsx';
 import BusDetails from './pages/common/BusDetails.jsx';
 import VendorList from './pages/common/VendorList.jsx';
 import Destinations from './pages/common/Destinations.jsx';
+
+// misc pages
 import NotFound from './pages/misc/NotFound.jsx';
 import Forbidden from './pages/misc/Forbidden.jsx';
 
@@ -30,8 +32,6 @@ import Payment from './pages/customer/Payment.jsx';
 import ReviewNotification from './pages/customer/ReviewNotification.jsx';
 
 // admin (merged vendor folder - handles both vendor and admin operations)
-import VendorDashboard from './pages/admin/VendorDashboard.jsx';
-import VendorBuses from './pages/admin/VendorBuses.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminBuses from './pages/admin/AdminBuses.jsx';
 import AdminRoutes from './pages/admin/AdminRoutes.jsx';
@@ -39,6 +39,12 @@ import AdminSchedules from './pages/admin/AdminSchedules.jsx';
 import VendorBookings from './pages/admin/VendorBookings.jsx';
 import Billing from './pages/admin/Billing.jsx';
 import RatingsReviews from './pages/admin/RatingsReviews.jsx';
+import VendorManagement from './pages/admin/VendorManagement.jsx';
+import VendorProfile from './pages/admin/VendorProfile.jsx';
+import BusSeatManagement from './pages/admin/BusSeatManagement.jsx';
+import BusForm from './pages/admin/BusForm.jsx';
+import VendorForm from './pages/admin/VendorForm.jsx';
+import ManageBuses from './pages/admin/ManageBuses.jsx';
 
 // superadmin
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard.jsx';
@@ -101,11 +107,11 @@ const App = () => {
             {/* Vendor routes - role='vendor' from database */}
             <Route
               path="/vendor/*"
-              element={<ProtectedRoute allowedRoles={["vendor"]}><VendorDashboard /></ProtectedRoute>}
+              element={<ProtectedRoute allowedRoles={["vendor"]}><AdminDashboard /></ProtectedRoute>}
             />
             <Route
               path="/vendor/buses"
-              element={<ProtectedRoute allowedRoles={["vendor"]}><VendorBuses /></ProtectedRoute>}
+              element={<ProtectedRoute allowedRoles={["vendor"]}><AdminBuses /></ProtectedRoute>}
             />
 
             {/* Admin routes - role='system_admin' from database */}
@@ -137,6 +143,14 @@ const App = () => {
               path="/admin/ratings"
               element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><RatingsReviews /></ProtectedRoute>}
             />
+            <Route
+              path="/admin/vendors"
+              element={<ProtectedRoute allowedRoles={["system_admin"]}><VendorManagement /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/seat-management"
+              element={<ProtectedRoute allowedRoles={["system_admin", "vendor"]}><BusSeatManagement /></ProtectedRoute>}
+            />
             
             {/* Vendor specific routes */}
             <Route
@@ -154,6 +168,14 @@ const App = () => {
             <Route
               path="/vendor/billing"
               element={<ProtectedRoute allowedRoles={["vendor"]}><Billing /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/ratings"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><RatingsReviews /></ProtectedRoute>}
+            />
+            <Route
+              path="/vendor/seat-management"
+              element={<ProtectedRoute allowedRoles={["vendor"]}><BusSeatManagement /></ProtectedRoute>}
             />
             <Route
               path="/vendor/ratings"
