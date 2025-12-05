@@ -1,13 +1,13 @@
 """
 Dependencies - FastAPI dependency injection
-Authentication ra authorization dependencies
+Authentication and authorization dependencies with Firebase support
 """
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 
-from app.core.security import decode_access_token
+from app.core.security import decode_access_token, verify_token
 from app.core.exceptions import UnauthorizedException, ForbiddenException
 
 
@@ -19,28 +19,64 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> dict:
     """
-    Get current authenticated user from JWT token
-    Dependency injection: Routes ma use garna milcha
+    Get current authenticated user from JWT or Firebase token
+    Supports both Firebase authentication and legacy JWT
     """
     token = credentials.credentials
     
-    payload = decode_access_token(token)
+    # Try Firebase token first, then fall back to JWT
+    payload = await verify_token(token)
     
     if payload is None:
         raise UnauthorizedException("Invalid or expired token")
     
     # Extract user info from token
-    user_id = payload.get("id")
+    user_id = payload.get("id") or payload.get("uid")
     email = payload.get("email")
-    role = payload.get("role")
+    role = payload.get("role", "customer")  # Default to customer if role not in token
     
-    if not user_id or not email:
+    if not email:
         raise UnauthorizedException("Invalid token payload")
     
     return {
         "id": user_id,
+        "uid": payload.get("uid"),
         "email": email,
-        "role": role
+        "role": role,
+        "firebase": payload.get("firebase", False)
+    }
+
+
+async def get_current_user_from_header(
+    authorization: str = Header(None)
+) -> dict:
+    """
+    Alternative method to get current user from Authorization header
+    Useful for routes that need manual header handling
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise UnauthorizedException("Missing or invalid authorization header")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    payload = await verify_token(token)
+    
+    if payload is None:
+        raise UnauthorizedException("Invalid or expired token")
+    
+    user_id = payload.get("id") or payload.get("uid")
+    email = payload.get("email")
+    role = payload.get("role", "customer")
+    
+    if not email:
+        raise UnauthorizedException("Invalid token payload")
+    
+    return {
+        "id": user_id,
+        "uid": payload.get("uid"),
+        "email": email,
+        "role": role,
+        "firebase": payload.get("firebase", False)
     }
 
 

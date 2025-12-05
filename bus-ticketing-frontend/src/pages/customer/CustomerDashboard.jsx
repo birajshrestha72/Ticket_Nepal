@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../../css/customerDashboard.css';
+import SearchQuery from '../../components/SearchQuery';
+import Search from '../common/Search';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -204,10 +206,13 @@ const CustomerDashboard = () => {
             <span className="nav-text">Dashboard</span>
           </button>
           
-          <Link to="/search" className="nav-item">
+          <button
+            className={`nav-item ${activeSection === 'search' ? 'active' : ''}`}
+            onClick={() => setActiveSection('search')}
+          >
             <span className="nav-icon">🔍</span>
             <span className="nav-text">Search Buses</span>
-          </Link>
+          </button>
           
           <Link to="/bookings" className="nav-item">
             <span className="nav-icon">🎫</span>
@@ -253,8 +258,29 @@ const CustomerDashboard = () => {
             </p>
           </div>
 
-          {/* Profile Information Section */}
-          <section className="profile-section card">
+          {/* Search Section */}
+          {activeSection === 'search' && (
+            <section className="search-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="title-icon">🔍</span>
+                  Search Buses
+                </h2>
+              </div>
+              <div className="search-content">
+                <SearchQuery variant="dashboard" />
+                <div className="search-results-container">
+                  <Search embedded={true} />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Dashboard Section */}
+          {activeSection === 'dashboard' && (
+            <>
+              {/* Profile Information Section */}
+              <section className="profile-section card">
             <div className="section-header">
               <h2 className="section-title">
                 <span className="title-icon">👤</span>
@@ -491,6 +517,8 @@ const CustomerDashboard = () => {
               </div>
             </div>
           </section>
+            </>
+          )}
         </div>
       </main>
     </div>

@@ -127,6 +127,15 @@ app.include_router(
     tags=["Authentication"]
 )
 
+# Firebase Authentication router
+from app.api.routes import firebase_auth
+
+app.include_router(
+    firebase_auth.router,
+    prefix=f"{settings.API_PREFIX}",
+    tags=["Firebase Auth"]
+)
+
 # Import test router
 from app.api.routes import test
 
@@ -197,6 +206,15 @@ app.include_router(
     stats.router,
     prefix=f"{settings.API_PREFIX}/stats",
     tags=["Statistics"]
+)
+
+# Import seat locks router
+from app.api.routes import seat_locks
+
+app.include_router(
+    seat_locks.router,
+    prefix=f"{settings.API_PREFIX}/seat-locks",
+    tags=["Seat Locking"]
 )
 
 

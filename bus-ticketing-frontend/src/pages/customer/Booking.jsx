@@ -1,27 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import SeatPicker from './SeatPicker';
 import '../../css/booking.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+/**
+ * Booking Component - Simplified to handle seat selection only
+ * Receives selected bus/schedule from Search page
+ * Uses SeatPicker component for interactive seat selection
+ * Collects passenger details and proceeds to payment
+ */
 const Booking = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   
-  // Get data from URL params or location state
-  const busIdParam = searchParams.get('busId');
-  const scheduleIdParam = searchParams.get('scheduleId');
-  const schedulesFromSearch = location.state?.schedules || [];
+  // Get selected schedule from navigation state
+  const selectedSchedule = location.state?.selectedSchedule;
   const searchCriteria = location.state?.searchCriteria || {};
   
   // State
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [busDetails, setBusDetails] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [bookedSeats, setBookedSeats] = useState([]);
   const [journeyDate, setJourneyDate] = useState(
     searchCriteria.date || new Date().toISOString().split('T')[0]
   );
@@ -34,71 +35,12 @@ const Booking = () => {
     specialRequests: ''
   });
 
+  // Redirect if no schedule selected
   useEffect(() => {
-    // Handle direct access with URL params
-    if (busIdParam && scheduleIdParam) {
-      setSelectedSchedule({ busId: busIdParam, scheduleId: scheduleIdParam });
+    if (!selectedSchedule) {
+      navigate('/search');
     }
-    // Handle access from search page with schedules
-    else if (schedulesFromSearch.length > 0) {
-      setSelectedSchedule(schedulesFromSearch[0]); // Auto-select first schedule
-      setLoading(false);
-    } else {
-      setError('Missing bus or schedule information');
-      setLoading(false);
-    }
-  }, [busIdParam, scheduleIdParam, schedulesFromSearch]);
-
-  useEffect(() => {
-    if (selectedSchedule) {
-      fetchBusDetails(selectedSchedule.busId);
-      fetchSeatAvailability(selectedSchedule.scheduleId);
-    }
-  }, [selectedSchedule, journeyDate]);
-
-  const fetchBusDetails = async (busId) => {
-    try {
-      const response = await fetch(`${API_URL}/buses/${busId}`);
-      if (!response.ok) throw new Error('Failed to fetch bus details');
-      
-      const data = await response.json();
-      if (data.status === 'success') {
-        setBusDetails(data.data.bus);
-      }
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const fetchSeatAvailability = async (scheduleId) => {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `${API_URL}/schedules/${scheduleId}/seats?journey_date=${journeyDate}`
-      );
-      
-      if (!response.ok) throw new Error('Failed to fetch seat availability');
-      
-      const data = await response.json();
-      if (data.status === 'success') {
-        setBookedSeats(data.data.seatAvailability.bookedSeats);
-      }
-      setLoading(false);
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
-  };
-
-  const handleSeatClick = (seatNumber) => {
-    if (bookedSeats.includes(seatNumber)) return;
-    
-    if (selectedSeats.includes(seatNumber)) {
-      setSelectedSeats(selectedSeats.filter(s => s !== seatNumber));
-    } else {
-      setSelectedSeats([...selectedSeats, seatNumber]);
-    }
-  };
+  }, [selectedSchedule, navigate]);
 
   const handleInputChange = (e) => {
     setPassengerDetails({
@@ -113,7 +55,11 @@ const Booking = () => {
     setSelectedSeats([]); // Clear selected seats when date changes
   };
 
-  const handleSubmit = (e) => {
+  const handleSeatsChange = (seats) => {
+    setSelectedSeats(seats);
+  };
+
+  const handleProceedToPayment = (e) => {
     e.preventDefault();
     
     if (selectedSeats.length === 0) {
@@ -126,218 +72,114 @@ const Booking = () => {
       return;
     }
     
-    // Prepare booking data to pass to BookingBill
+    // Prepare booking data for payment
     const bookingData = {
-      busDetails: {
-        id: selectedSchedule.busId,
-        busType: selectedSchedule.busType || busDetails?.busType,
-        busNumber: selectedSchedule.busNumber || busDetails?.busNumber,
-        vendor: selectedSchedule.vendorName || busDetails?.vendor,
-        from: selectedSchedule.origin || searchCriteria.from,
-        to: selectedSchedule.destination || searchCriteria.to,
-        departureTime: selectedSchedule.departureTime,
-        fare: selectedSchedule.price || busDetails?.fare
-      },
-      scheduleId: selectedSchedule.scheduleId,
+      schedule: selectedSchedule,
       journeyDate: journeyDate,
       selectedSeats: selectedSeats,
       numberOfSeats: selectedSeats.length,
-      passengerDetails: {
-        name: passengerDetails.name,
-        phone: passengerDetails.phone,
-        email: passengerDetails.email,
-        pickupPoint: passengerDetails.pickupPoint || selectedSchedule.origin,
-        dropPoint: passengerDetails.dropPoint || selectedSchedule.destination,
-        specialRequests: passengerDetails.specialRequests
+      passengerDetails: passengerDetails,
+      busDetails: {
+        busNumber: selectedSchedule.bus.bus_number,
+        busType: selectedSchedule.bus.bus_type,
+        vendorName: selectedSchedule.vendor.name,
+        vendorId: selectedSchedule.vendor.vendor_id,
+        origin: selectedSchedule.route.origin,
+        destination: selectedSchedule.route.destination,
+        departureTime: selectedSchedule.departure_time,
+        arrivalTime: selectedSchedule.arrival_time
       },
-      farePerSeat: selectedSchedule.price || busDetails?.fare,
-      totalAmount: selectedSeats.length * (selectedSchedule.price || busDetails?.fare || 0)
+      pricing: {
+        farePerSeat: selectedSchedule.price,
+        numberOfSeats: selectedSeats.length,
+        subtotal: selectedSchedule.price * selectedSeats.length,
+        serviceFee: (selectedSchedule.price * selectedSeats.length * 0.02).toFixed(2), // 2% service fee
+        totalAmount: (selectedSchedule.price * selectedSeats.length * 1.02).toFixed(2)
+      }
     };
     
-    // Navigate to BookingBill for review and breakdown
-    navigate('/booking-bill', { state: bookingData });
+    // Navigate to payment page
+    navigate('/payment', { state: bookingData });
   };
 
-  // Generate seat layout (A-J rows, 1-4 columns)
-  const generateSeatLayout = () => {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-    const cols = [1, 2, 3, 4];
-    const totalSeats = busDetails?.seats || 40;
-    
-    return rows.slice(0, Math.ceil(totalSeats / 4)).map((row, rowIndex) => (
-      <div className="seat-row" key={row}>
-        <span className="row-label">{row}</span>
-        {cols.map(col => {
-          const seatNum = `${row}${col}`;
-          const seatIndex = rowIndex * 4 + col;
-          if (seatIndex > totalSeats) return null;
-          
-          const isBooked = bookedSeats.includes(seatNum);
-          const isSelected = selectedSeats.includes(seatNum);
-          
-          let seatClass = 'available';
-          if (isBooked) seatClass = 'booked';
-          else if (isSelected) seatClass = 'selected';
-          
-          return (
-            <button
-              key={seatNum}
-              type="button"
-              className={`seat-btn ${seatClass}`}
-              onClick={() => handleSeatClick(seatNum)}
-              disabled={isBooked}
-            >
-              {seatNum}
-            </button>
-          );
-        })}
-        {rowIndex === 2 && <div className="aisle"></div>}
-      </div>
-    ));
-  };
-
-  if (loading) {
-    return (
-      <div className="booking-page">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Loading bus details...</p>
-        </div>
-      </div>
-    );
+  if (!selectedSchedule) {
+    return null; // Will redirect to search
   }
 
-  if (error || !selectedSchedule) {
-    return (
-      <div className="booking-page">
-        <div className="error-container">
-          <h3>Error</h3>
-          <p>{error || 'Please select a bus schedule'}</p>
-          <button onClick={() => navigate('/search')} className="btn-primary">
-            Back to Search
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const totalAmount = selectedSeats.length * (selectedSchedule.price || busDetails?.fare || 0);
+  const totalAmount = selectedSeats.length * selectedSchedule.price;
 
   return (
     <div className="booking-page">
       <div className="booking-container">
         <h1 className="booking-title">Complete Your Booking</h1>
         
-        {/* Schedule Selector (if multiple schedules available) */}
-        {schedulesFromSearch.length > 1 && (
-          <div className="schedule-selector">
-            <h3>Select Your Bus</h3>
-            <div className="schedule-options">
-              {schedulesFromSearch.map((schedule) => (
-                <button
-                  key={schedule.scheduleId}
-                  type="button"
-                  className={`schedule-option ${selectedSchedule.scheduleId === schedule.scheduleId ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedSchedule(schedule);
-                    setSelectedSeats([]); // Clear seats when switching schedules
-                  }}
-                >
-                  <div className="schedule-time">
-                    <strong>{schedule.departureTime}</strong>
-                    <span className="arrow">→</span>
-                    <strong>{schedule.arrivalTime}</strong>
-                  </div>
-                  <div className="schedule-bus">
-                    {schedule.busNumber} - {schedule.busType}
-                  </div>
-                  <div className="schedule-price">
-                    Rs. {schedule.price}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Bus Info Card */}
+        {/* Bus Information Card */}
         <div className="bus-info-card">
           <div className="bus-info-header">
-            <h2>{selectedSchedule.busType || busDetails?.busType} - {selectedSchedule.busNumber || busDetails?.busNumber}</h2>
-            <span className="vendor-name">{selectedSchedule.vendorName || busDetails?.vendor}</span>
+            <div className="bus-main-details">
+              <h2 className="bus-reg">{selectedSchedule.bus.bus_number}</h2>
+              <span className="bus-type-tag">{selectedSchedule.bus.bus_type}</span>
+            </div>
+            <div className="vendor-details">
+              <span className="vendor-name">{selectedSchedule.vendor.name}</span>
+              <span className="vendor-rating">★ {selectedSchedule.vendor.rating.toFixed(1)}</span>
+            </div>
           </div>
+          
           <div className="bus-info-body">
-            <div className="info-item">
-              <span className="label">Route:</span>
-              <span className="value">{selectedSchedule.origin || searchCriteria.from} → {selectedSchedule.destination || searchCriteria.to}</span>
+            <div className="route-info">
+              <div className="route-point">
+                <span className="route-label">From</span>
+                <span className="route-value">{selectedSchedule.route.origin}</span>
+                <span className="route-time">{selectedSchedule.departure_time}</span>
+              </div>
+              <div className="route-arrow">→</div>
+              <div className="route-point">
+                <span className="route-label">To</span>
+                <span className="route-value">{selectedSchedule.route.destination}</span>
+                <span className="route-time">{selectedSchedule.arrival_time}</span>
+              </div>
             </div>
-            <div className="info-item">
-              <span className="label">Departure:</span>
-              <span className="value">{selectedSchedule.departureTime}</span>
-            </div>
-            <div className="info-item">
-              <span className="label">Fare:</span>
-              <span className="value">Rs. {selectedSchedule.price || busDetails?.fare} per seat</span>
+            
+            <div className="fare-info">
+              <span className="fare-label">Fare per seat:</span>
+              <span className="fare-value">Rs. {selectedSchedule.price.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="booking-form">
+        <form onSubmit={handleProceedToPayment} className="booking-form">
           <div className="booking-layout">
             {/* Left: Seat Selection */}
             <div className="seat-selection-section">
-              <h3 className="section-title">Select Your Seats</h3>
-              
-              <div className="seat-legend">
-                <div className="legend-item">
-                  <div className="seat-sample available"></div>
-                  <span>Available</span>
-                </div>
-                <div className="legend-item">
-                  <div className="seat-sample selected"></div>
-                  <span>Selected</span>
-                </div>
-                <div className="legend-item">
-                  <div className="seat-sample booked"></div>
-                  <span>Booked</span>
-                </div>
+              <div className="journey-date-selector">
+                <label htmlFor="journeyDate">Journey Date *</label>
+                <input
+                  type="date"
+                  id="journeyDate"
+                  value={journeyDate}
+                  onChange={handleDateChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                  className="date-input"
+                />
               </div>
 
-              <div className="bus-layout">
-                <div className="driver-section">
-                  <span className="driver-icon">🚗</span>
-                  <span>Driver</span>
-                </div>
-                <div className="seats-grid">
-                  {generateSeatLayout()}
-                </div>
-              </div>
-              
-              <div className="selected-seats-info">
-                <strong>Selected Seats:</strong> 
-                <span className="seats-list">
-                  {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}
-                </span>
-              </div>
+              <SeatPicker
+                scheduleId={selectedSchedule.schedule_id}
+                totalSeats={selectedSchedule.bus.total_seats}
+                journeyDate={journeyDate}
+                onSeatsChange={handleSeatsChange}
+                selectedSeats={selectedSeats}
+                busType={selectedSchedule.bus.bus_type}
+              />
             </div>
 
             {/* Right: Passenger Details & Summary */}
-            <div className="passenger-details-section">
-              <div className="details-card">
+            <div className="passenger-section">
+              <div className="passenger-form-card">
                 <h3 className="section-title">Passenger Details</h3>
                 
-                <div className="form-group">
-                  <label htmlFor="journeyDate">Journey Date *</label>
-                  <input
-                    type="date"
-                    id="journeyDate"
-                    value={journeyDate}
-                    onChange={handleDateChange}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                </div>
-
                 <div className="form-group">
                   <label htmlFor="name">Full Name *</label>
                   <input
@@ -346,7 +188,7 @@ const Booking = () => {
                     name="name"
                     value={passengerDetails.name}
                     onChange={handleInputChange}
-                    placeholder="Enter your full name"
+                    placeholder="Enter full name"
                     required
                   />
                 </div>
@@ -386,7 +228,7 @@ const Booking = () => {
                     name="pickupPoint"
                     value={passengerDetails.pickupPoint}
                     onChange={handleInputChange}
-                    placeholder="E.g., Kalanki"
+                    placeholder="E.g., Kalanki Bus Stop"
                   />
                 </div>
 
@@ -398,7 +240,7 @@ const Booking = () => {
                     name="dropPoint"
                     value={passengerDetails.dropPoint}
                     onChange={handleInputChange}
-                    placeholder="E.g., Lakeside"
+                    placeholder="E.g., Lakeside Pokhara"
                   />
                 </div>
 
@@ -418,18 +260,27 @@ const Booking = () => {
               {/* Booking Summary */}
               <div className="booking-summary-card">
                 <h3 className="section-title">Booking Summary</h3>
-                <div className="summary-item">
+                
+                <div className="summary-row">
                   <span>Selected Seats:</span>
+                  <strong>{selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}</strong>
+                </div>
+                
+                <div className="summary-row">
+                  <span>Number of Seats:</span>
                   <strong>{selectedSeats.length}</strong>
                 </div>
-                <div className="summary-item">
-                  <span>Fare per seat:</span>
-                  <strong>Rs. {busDetails.fare}</strong>
+                
+                <div className="summary-row">
+                  <span>Fare per Seat:</span>
+                  <strong>Rs. {selectedSchedule.price.toLocaleString()}</strong>
                 </div>
+                
                 <div className="summary-divider"></div>
-                <div className="summary-item total">
+                
+                <div className="summary-row total">
                   <span>Total Amount:</span>
-                  <strong>Rs. {totalAmount}</strong>
+                  <strong>Rs. {totalAmount.toLocaleString()}</strong>
                 </div>
                 
                 <button 
@@ -437,7 +288,15 @@ const Booking = () => {
                   className="btn-proceed"
                   disabled={selectedSeats.length === 0}
                 >
-                  Review Booking →
+                  Proceed to Payment →
+                </button>
+
+                <button 
+                  type="button" 
+                  className="btn-back"
+                  onClick={() => navigate('/search')}
+                >
+                  ← Back to Search
                 </button>
               </div>
             </div>
@@ -447,4 +306,5 @@ const Booking = () => {
     </div>
   );
 };
+
 export default Booking;

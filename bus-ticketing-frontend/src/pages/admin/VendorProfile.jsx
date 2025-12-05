@@ -268,7 +268,7 @@ const VendorProfile = () => {
         {vendorProfile?.is_verified && (
           <div className="rating-badge">
             <span className="star">⭐</span>
-            <span className="rating-value">{vendorProfile.average_rating?.toFixed(1) || '0.0'}</span>
+            <span className="rating-value">{parseFloat(vendorProfile.average_rating || 0).toFixed(1)}</span>
             <span className="rating-count">({vendorProfile.total_reviews || 0} reviews)</span>
           </div>
         )}

@@ -1,0 +1,161 @@
+/* SearchQuery Component Styles - Reusable bus search form */
+
+.search-query-component {
+  width: 100%;
+}
+
+.search-query-component .quick-search-form {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(46, 125, 50, 0.1);
+}
+
+.search-query-component .search-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-query-component .search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search-query-component .search-field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-query-component .search-select,
+.search-query-component .date-picker-input {
+  padding: 0.9rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  width: 100%;
+}
+
+.search-query-component .search-select:focus,
+.search-query-component .date-picker-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+.search-query-component .search-select:disabled,
+.search-query-component .date-picker-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.search-query-component .btn-search {
+  width: 100%;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.search-query-component .btn-search:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.search-query-component .btn-search:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Variant: Dashboard - More compact styling */
+.search-query-component.dashboard .quick-search-form {
+  padding: 1.5rem;
+}
+
+.search-query-component.dashboard .search-fields {
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.search-query-component.dashboard .search-field label {
+  font-size: 0.85rem;
+}
+
+.search-query-component.dashboard .search-select,
+.search-query-component.dashboard .date-picker-input {
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.search-query-component.dashboard .btn-search {
+  padding: 0.85rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .search-query-component .search-fields {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-query-component .quick-search-form {
+    padding: 1.5rem;
+  }
+  
+  .search-query-component .search-fields {
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  .search-query-component .search-field label {
+    font-size: 0.85rem;
+  }
+  
+  .search-query-component .search-select,
+  .search-query-component .date-picker-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.95rem;
+  }
+  
+  .search-query-component .btn-search {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-query-component .quick-search-form {
+    padding: 1.25rem;
+  }
+  
+  .search-query-component .search-fields {
+    gap: 0.75rem;
+  }
+  
+  .search-query-component .search-field label {
+    font-size: 0.8rem;
+  }
+  
+  .search-query-component .search-select,
+  .search-query-component .date-picker-input {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .search-query-component .btn-search {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}

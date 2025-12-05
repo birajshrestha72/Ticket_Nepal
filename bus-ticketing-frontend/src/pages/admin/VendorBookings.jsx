@@ -16,6 +16,7 @@ const VendorBookings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
   const [filters, setFilters] = useState({
@@ -77,6 +78,8 @@ const VendorBookings = () => {
 
     try {
       const token = localStorage.getItem('token');
+      console.log('🔑 Token exists:', !!token);
+      
       if (!token) {
         navigate('/login');
         return;
@@ -91,12 +94,17 @@ const VendorBookings = () => {
       params.append('limit', pagination.limit);
       params.append('offset', pagination.offset);
 
-      const response = await fetch(`${API_URL}/bookings/vendor/all?${params.toString()}`, {
+      const url = `${API_URL}/bookings/vendor/all?${params.toString()}`;
+      console.log('📡 Fetching bookings from:', url);
+
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+
+      console.log('📊 Response status:', response.status);
 
       if (response.status === 401) {
         localStorage.removeItem('token');
@@ -105,45 +113,27 @@ const VendorBookings = () => {
       }
 
       const data = await response.json();
+      console.log('📦 Response data:', data);
 
       if (data.status === 'success') {
+        console.log('✅ Bookings received:', data.data.bookings?.length || 0);
         setBookings(data.data.bookings);
         setPagination(prev => ({ ...prev, total: data.data.total }));
         calculateStats(data.data.bookings);
       } else {
+        console.error('❌ Error:', data.message);
         setError(data.message || 'Failed to fetch bookings');
       }
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error('💥 Fetch error:', err);
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch buses for filter dropdown
-  const fetchBuses = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      const endpoint = user.role === 'vendor' ? '/buses/vendor' : '/buses/all';
-      
-      const response = await fetch(`${API_URL}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        setBuses(data.data);
-      }
-    } catch (err) {
-      console.error('Error fetching buses:', err);
-    }
-  };
+  // Note: Bus list is now extracted from bookings data
+  // Each booking contains bus info, so we don't need a separate API call
 
   // Calculate stats from bookings
   const calculateStats = (bookingsList) => {
@@ -171,8 +161,24 @@ const VendorBookings = () => {
   // Load data on mount and filter changes
   useEffect(() => {
     fetchBookings();
-    fetchBuses();
   }, [filters, pagination.offset]);
+
+  // Extract unique buses from bookings for filter dropdown
+  useEffect(() => {
+    const uniqueBuses = [];
+    const busIds = new Set();
+    bookings.forEach(booking => {
+      if (booking.bus && !busIds.has(booking.bus.bus_id)) {
+        busIds.add(booking.bus.bus_id);
+        uniqueBuses.push({
+          bus_id: booking.bus.bus_id,
+          bus_number: booking.bus.bus_number,
+          bus_type: booking.bus.bus_type
+        });
+      }
+    });
+    setBuses(uniqueBuses);
+  }, [bookings]);
 
   // Handle filter changes
   const handleFilterChange = (field, value) => {
@@ -194,7 +200,7 @@ const VendorBookings = () => {
   // Handle booking details modal
   const viewDetails = (booking) => {
     setSelectedBooking(booking);
-    setShowDetails(true);
+    setShowDetailsModal(true);
   };
 
   // Export to CSV
@@ -543,12 +549,12 @@ const VendorBookings = () => {
       </div>
 
       {/* Details Modal */}
-      {showDetails && selectedBooking && (
-        <div className="modal-overlay" onClick={() => setShowDetails(false)}>
+      {showDetailsModal && selectedBooking && (
+        <div className="modal-overlay" onClick={() => setShowDetailsModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Booking Details</h2>
-              <button className="close-modal" onClick={() => setShowDetails(false)}>×</button>
+              <button className="close-modal" onClick={() => setShowDetailsModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="detail-section">

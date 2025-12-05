@@ -40,24 +40,61 @@ async def create_booking(
 ) -> Dict[str, Any]:
     """
     Create a new booking after payment verification
+    Enhanced validations:
+    - Schedule existence and status
+    - Journey date validation
+    - Seat availability check
+    - Seat number format validation
+    - Payment status verification
     """
     try:
         user_id = current_user.get("id")
+        
+        # Validate journey date is not in the past
+        try:
+            journey_date = datetime.strptime(booking_data.journeyDate, '%Y-%m-%d').date()
+            if journey_date < date.today():
+                raise BadRequestException("Cannot book for past dates")
+        except ValueError:
+            raise BadRequestException("Invalid date format. Use YYYY-MM-DD")
+        
+        # Validate seat numbers format (should be alphanumeric, e.g., A1, B2)
+        for seat in booking_data.seatNumbers:
+            if not seat or len(seat) > 10:
+                raise BadRequestException(f"Invalid seat number format: {seat}")
+        
+        # Validate number of seats matches seat numbers array length
+        if len(booking_data.seatNumbers) != booking_data.numberOfSeats:
+            raise BadRequestException("Number of seats does not match selected seat numbers")
+        
+        # Validate payment method
+        valid_payment_methods = ['khalti', 'esewa', 'cash', 'card']
+        if booking_data.paymentMethod.lower() not in valid_payment_methods:
+            raise BadRequestException(f"Invalid payment method. Must be one of: {', '.join(valid_payment_methods)}")
+        
+        # Validate payment status
+        valid_payment_statuses = ['paid', 'pending', 'failed']
+        if booking_data.paymentStatus.lower() not in valid_payment_statuses:
+            raise BadRequestException(f"Invalid payment status. Must be one of: {', '.join(valid_payment_statuses)}")
         
         # Generate unique booking reference
         booking_reference = f"TN{datetime.now().strftime('%Y%m%d')}{uuid.uuid4().hex[:8].upper()}"
         
         # Validate schedule exists and is active
         schedule_query = """
-            SELECT bs.*, bus.vendor_id, bus.bus_number, bus.bus_type
+            SELECT bs.*, bus.vendor_id, bus.bus_number, bus.bus_type, bus.total_seats
             FROM bus_schedules bs
-            JOIN buses bus ON bs.bus_id = bus.id
-            WHERE bs.id = $1 AND bs.is_active = true
+            JOIN buses bus ON bs.bus_id = bus.bus_id
+            WHERE bs.schedule_id = $1 AND bs.is_active = true
         """
         schedule = await database.fetch_one(schedule_query, booking_data.scheduleId)
         
         if not schedule:
             raise NotFoundException("Bus schedule not found or inactive")
+        
+        # Validate total seats doesn't exceed bus capacity
+        if booking_data.numberOfSeats > schedule['total_seats']:
+            raise BadRequestException(f"Cannot book {booking_data.numberOfSeats} seats. Bus capacity is {schedule['total_seats']}")
         
         # Check seat availability (in production, implement proper seat locking)
         # For now, we'll just check if seats are not already booked
@@ -71,7 +108,7 @@ async def create_booking(
         existing_bookings = await database.fetch_all(
             seat_check_query,
             booking_data.scheduleId,
-            booking_data.journeyDate
+            journey_date
         )
         
         # Flatten booked seats
@@ -83,7 +120,13 @@ async def create_booking(
         # Check for conflicts
         conflicts = set(booking_data.seatNumbers) & set(booked_seats)
         if conflicts:
-            raise BadRequestException(f"Seats already booked: {', '.join(conflicts)}")
+            raise BadRequestException(f"Seats already booked: {', '.join(sorted(conflicts))}. Please select different seats.")
+        
+        # Validate total amount calculation
+        # In production, fetch actual price from schedule
+        # For now, just ensure amount is positive
+        if booking_data.totalAmount <= 0:
+            raise BadRequestException("Total amount must be greater than zero")
         
         # Create booking
         booking_insert_query = """
@@ -102,7 +145,7 @@ async def create_booking(
             user_id,
             booking_data.scheduleId,
             booking_reference,
-            booking_data.journeyDate,
+            journey_date,
             booking_data.numberOfSeats,
             booking_data.seatNumbers,
             booking_data.passengerName,
@@ -327,12 +370,12 @@ async def get_my_bookings(
                 t.qr_code_url as "qrCodeUrl"
                 
             FROM bookings b
-            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.id
-            LEFT JOIN buses bus ON bs.bus_id = bus.id
-            LEFT JOIN vendors v ON bus.vendor_id = v.id
-            LEFT JOIN routes r ON bs.route_id = r.id
-            LEFT JOIN payments p ON b.id = p.booking_id
-            LEFT JOIN tickets t ON b.id = t.booking_id
+            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.schedule_id
+            LEFT JOIN buses bus ON bs.bus_id = bus.bus_id
+            LEFT JOIN vendors v ON bus.vendor_id = v.vendor_id
+            LEFT JOIN routes r ON bs.route_id = r.route_id
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
+            LEFT JOIN tickets t ON b.booking_id = t.booking_id
             WHERE b.user_id = $1
             ORDER BY b.created_at DESC
         """
@@ -404,13 +447,13 @@ async def get_booking_details(
                 t.ticket_number,
                 t.qr_code_url
             FROM bookings b
-            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.id
-            LEFT JOIN buses bus ON bs.bus_id = bus.id
-            LEFT JOIN vendors v ON bus.vendor_id = v.id
-            LEFT JOIN routes r ON bs.route_id = r.id
-            LEFT JOIN payments p ON b.id = p.booking_id
-            LEFT JOIN tickets t ON b.id = t.booking_id
-            WHERE b.id = $1 AND b.user_id = $2
+            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.schedule_id
+            LEFT JOIN buses bus ON bs.bus_id = bus.bus_id
+            LEFT JOIN vendors v ON bus.vendor_id = v.vendor_id
+            LEFT JOIN routes r ON bs.route_id = r.route_id
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
+            LEFT JOIN tickets t ON b.booking_id = t.booking_id
+            WHERE b.booking_id = $1 AND b.user_id = $2
         """
         
         booking = await database.fetch_one(query, booking_id, user_id)
@@ -512,21 +555,47 @@ async def get_vendor_bookings(
     Vendors can see bookings for all their buses
     """
     try:
-        vendor_id = current_user.get('vendor_id')
+        print(f"🔍 get_vendor_bookings called")
+        print(f"👤 Current user: {current_user}")
+        print(f"🆔 User ID: {current_user.get('id')}")
+        print(f"👔 User Role: {current_user.get('role')}")
+        
+        # Get vendor_id from vendors table
+        vendor_id = None
+        if current_user.get('role') == 'vendor':
+            vendor_query = """
+                SELECT vendor_id FROM vendors WHERE user_id = $1
+            """
+            vendor_result = await database.fetch_one(vendor_query, current_user.get('id'))
+            if vendor_result:
+                vendor_id = vendor_result['vendor_id']
+            print(f"🔍 Vendor lookup: user_id={current_user.get('id')}, vendor_id={vendor_id}")
         
         conditions = []
         params = []
         param_count = 1
         
         # Filter by vendor
-        if current_user.get('role') == 'vendor' and vendor_id:
-            conditions.append(f"v.vendor_id = ${param_count}")
-            params.append(vendor_id)
-            param_count += 1
+        if current_user.get('role') == 'vendor':
+            if vendor_id:
+                conditions.append(f"v.vendor_id = ${param_count}")
+                params.append(vendor_id)
+                param_count += 1
+            else:
+                # No vendor_id found, return empty result
+                return {
+                    "status": "success",
+                    "data": {
+                        "bookings": [],
+                        "total": 0,
+                        "limit": limit,
+                        "offset": offset
+                    }
+                }
         
         # Filter by status
         if status_filter:
-            conditions.append(f"b.status = ${param_count}")
+            conditions.append(f"b.booking_status = ${param_count}")
             params.append(status_filter)
             param_count += 1
         
@@ -539,12 +608,30 @@ async def get_vendor_bookings(
         # Filter by date range
         if date_from:
             conditions.append(f"b.journey_date >= ${param_count}")
-            params.append(date_from)
+            # Convert string to date if needed
+            try:
+                from datetime import datetime
+                if isinstance(date_from, str):
+                    date_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                    params.append(date_obj)
+                else:
+                    params.append(date_from)
+            except:
+                params.append(date_from)
             param_count += 1
         
         if date_to:
             conditions.append(f"b.journey_date <= ${param_count}")
-            params.append(date_to)
+            # Convert string to date if needed
+            try:
+                from datetime import datetime
+                if isinstance(date_to, str):
+                    date_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+                    params.append(date_obj)
+                else:
+                    params.append(date_to)
+            except:
+                params.append(date_to)
             param_count += 1
         
         where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
@@ -561,7 +648,7 @@ async def get_vendor_bookings(
                 b.passenger_phone,
                 b.journey_date,
                 b.total_amount,
-                b.status,
+                b.booking_status,
                 b.created_at,
                 u.name as customer_name,
                 u.email as customer_email,
@@ -590,7 +677,10 @@ async def get_vendor_bookings(
         """
         
         params.extend([limit, offset])
+        print(f"📊 Query params: {params}")
+        print(f"🔍 WHERE clause: {where_clause}")
         bookings = await database.fetch_all(query, *params)
+        print(f"📦 Bookings found: {len(bookings)}")
         
         # Get total count
         count_params = params[:-2]  # Remove limit and offset
@@ -630,7 +720,7 @@ async def get_vendor_bookings(
                 "total_amount": float(booking['total_amount']) if booking['total_amount'] else 0.0,
                 "payment_method": booking['payment_method'],
                 "payment_status": booking['payment_status'],
-                "status": booking['status'],
+                "status": booking['booking_status'],
                 "created_at": booking['created_at'].isoformat() if booking['created_at'] else None
             })
         
@@ -729,11 +819,11 @@ async def get_booking_history(
                 r.destination,
                 p.payment_status
             FROM bookings b
-            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.id
-            LEFT JOIN buses bus ON bs.bus_id = bus.id
-            LEFT JOIN vendors v ON bus.vendor_id = v.id
-            LEFT JOIN routes r ON bs.route_id = r.id
-            LEFT JOIN payments p ON b.id = p.booking_id
+            LEFT JOIN bus_schedules bs ON b.schedule_id = bs.schedule_id
+            LEFT JOIN buses bus ON bs.bus_id = bus.bus_id
+            LEFT JOIN vendors v ON bus.vendor_id = v.vendor_id
+            LEFT JOIN routes r ON bs.route_id = r.route_id
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
             WHERE b.user_id = $1
             ORDER BY b.created_at DESC
             LIMIT $2 OFFSET $3

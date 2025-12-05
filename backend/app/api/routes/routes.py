@@ -395,11 +395,6 @@ async def update_route(
         if not update_fields:
             raise BadRequestException("No fields to update")
         
-        # Add updated_at
-        update_fields.append(f"updated_at = ${param_count}")
-        params.append(datetime.now())
-        param_count += 1
-        
         # Add route_id for WHERE clause
         params.append(route_id)
         
@@ -408,7 +403,7 @@ async def update_route(
             SET {', '.join(update_fields)}
             WHERE route_id = ${param_count}
             RETURNING route_id, origin, destination, distance_km, 
-                      estimated_duration_minutes, base_price, is_active, updated_at
+                      estimated_duration_minutes, base_price, is_active, created_at
         """
         
         route = await database.fetch_one(update_query, *params)
@@ -425,7 +420,7 @@ async def update_route(
                     "estimated_duration_minutes": route['estimated_duration_minutes'],
                     "base_price": float(route['base_price']),
                     "is_active": route['is_active'],
-                    "updated_at": route['updated_at'].isoformat()
+                    "created_at": route['created_at'].isoformat()
                 }
             }
         }
@@ -473,12 +468,12 @@ async def delete_route(
         # Soft delete - set is_active to false
         delete_query = """
             UPDATE routes
-            SET is_active = false, updated_at = $1
-            WHERE route_id = $2
+            SET is_active = false
+            WHERE route_id = $1
             RETURNING route_id
         """
         
-        await database.fetch_one(delete_query, datetime.now(), route_id)
+        await database.fetch_one(delete_query, route_id)
         
         return {
             "status": "success",

@@ -165,11 +165,26 @@ async def create_vendor(
         vendor_data.contact_email
     )
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    if vendor_dict.get('updated_at'):
+        vendor_dict['updated_at'] = vendor_dict['updated_at'].isoformat()
+    if vendor_dict.get('verification_date'):
+        vendor_dict['verification_date'] = vendor_dict['verification_date'].isoformat()
+    
     return {
         "status": "success",
         "message": "Vendor profile created successfully. Awaiting verification.",
         "data": {
-            "vendor": dict(vendor)
+            "vendor": vendor_dict
         }
     }
 
@@ -198,10 +213,25 @@ async def get_my_vendor_profile(
     if not vendor:
         raise NotFoundException("Vendor profile not found. Please complete registration.")
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    if vendor_dict.get('updated_at'):
+        vendor_dict['updated_at'] = vendor_dict['updated_at'].isoformat()
+    if vendor_dict.get('verification_date'):
+        vendor_dict['verification_date'] = vendor_dict['verification_date'].isoformat()
+    
     return {
         "status": "success",
         "data": {
-            "vendor": dict(vendor)
+            "vendor": vendor_dict
         }
     }
 
@@ -231,10 +261,21 @@ async def get_vendor_by_id(vendor_id: int):
     if not vendor:
         raise NotFoundException("Vendor not found")
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    
     return {
         "status": "success",
         "data": {
-            "vendor": dict(vendor)
+            "vendor": vendor_dict
         }
     }
 
@@ -531,11 +572,26 @@ async def update_my_vendor_profile(
         *values
     )
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(updated_vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    if vendor_dict.get('updated_at'):
+        vendor_dict['updated_at'] = vendor_dict['updated_at'].isoformat()
+    if vendor_dict.get('verification_date'):
+        vendor_dict['verification_date'] = vendor_dict['verification_date'].isoformat()
+    
     return {
         "status": "success",
         "message": "Vendor profile updated successfully",
         "data": {
-            "vendor": dict(updated_vendor)
+            "vendor": vendor_dict
         }
     }
 
@@ -562,11 +618,26 @@ async def verify_vendor(
     if not vendor:
         raise NotFoundException("Vendor not found")
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    if vendor_dict.get('updated_at'):
+        vendor_dict['updated_at'] = vendor_dict['updated_at'].isoformat()
+    if vendor_dict.get('verification_date'):
+        vendor_dict['verification_date'] = vendor_dict['verification_date'].isoformat()
+    
     return {
         "status": "success",
         "message": "Vendor verified successfully",
         "data": {
-            "vendor": dict(vendor)
+            "vendor": vendor_dict
         }
     }
 
@@ -593,11 +664,26 @@ async def unverify_vendor(
     if not vendor:
         raise NotFoundException("Vendor not found")
     
+    # Convert vendor record to dict and handle type conversions
+    vendor_dict = dict(vendor)
+    
+    # Convert Decimal to float for JSON serialization
+    if vendor_dict.get('average_rating') is not None:
+        vendor_dict['average_rating'] = float(vendor_dict['average_rating'])
+    
+    # Convert datetime objects to ISO strings
+    if vendor_dict.get('created_at'):
+        vendor_dict['created_at'] = vendor_dict['created_at'].isoformat()
+    if vendor_dict.get('updated_at'):
+        vendor_dict['updated_at'] = vendor_dict['updated_at'].isoformat()
+    if vendor_dict.get('verification_date'):
+        vendor_dict['verification_date'] = vendor_dict['verification_date'].isoformat()
+    
     return {
         "status": "success",
         "message": "Vendor unverified",
         "data": {
-            "vendor": dict(vendor)
+            "vendor": vendor_dict
         }
     }
 

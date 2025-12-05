@@ -1,0 +1,425 @@
+/* ========================================
+   Seat Picker Component Styles
+   Interactive bus seat selection UI
+======================================== */
+
+.seat-picker {
+  background: var(--surface, #fbfff8);
+  border-radius: var(--radius, 10px);
+  padding: 2rem;
+  box-shadow: var(--shadow, 0 6px 18px rgba(34, 50, 32, 0.08));
+}
+
+.seat-picker-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.seat-picker-header h3 {
+  color: var(--primary, #2e7d32);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.seat-picker-subtitle {
+  color: #666;
+  font-size: 0.95rem;
+}
+
+/* Seat Legend */
+.seat-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.seat-sample {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  transition: all 0.2s;
+}
+
+.seat-sample.available {
+  background: #fff;
+  border-color: var(--primary, #2e7d32);
+}
+
+.seat-sample.selected {
+  background: var(--accent, #f9a825);
+  border-color: var(--accent, #f9a825);
+}
+
+.seat-sample.booked {
+  background: #e0e0e0;
+  border-color: #999;
+  cursor: not-allowed;
+}
+
+.seat-sample.locked {
+  background: #ffeb3b;
+  border-color: #f9a825;
+}
+
+/* Bus Container */
+.bus-container {
+  max-width: 400px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 3px solid #333;
+  border-radius: 20px;
+  padding: 1.5rem 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+/* Driver Section */
+.driver-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  border-radius: 10px;
+  color: white;
+}
+
+.driver-seat {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.driver-icon {
+  font-size: 2rem;
+}
+
+.driver-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.windshield {
+  width: 80px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+/* Seats Area */
+.seats-area {
+  padding: 1rem 0.5rem;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.row-label {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--primary, #2e7d32);
+  min-width: 30px;
+  text-align: center;
+}
+
+.row-seats {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  align-items: center;
+}
+
+/* Aisle */
+.aisle {
+  width: 30px;
+  height: 50px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    transparent 100%
+  );
+  border-left: 2px dashed #ccc;
+  border-right: 2px dashed #ccc;
+  flex-shrink: 0;
+}
+
+/* Seat Buttons */
+.seat-btn {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  font-weight: 600;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.seat-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.seat-btn.available {
+  border-color: var(--primary, #2e7d32);
+  background: linear-gradient(135deg, #ffffff 0%, #f1f8f4 100%);
+}
+
+.seat-btn.available:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: var(--primary, #2e7d32);
+}
+
+.seat-btn.selected {
+  background: linear-gradient(135deg, var(--accent, #f9a825) 0%, #f57c00 100%);
+  border-color: var(--accent, #f9a825);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(249, 168, 37, 0.5);
+}
+
+.seat-btn.selected:hover {
+  background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+}
+
+.seat-btn.booked {
+  background: linear-gradient(135deg, #bdbdbd 0%, #9e9e9e 100%);
+  border-color: #757575;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.seat-btn.locked {
+  background: linear-gradient(135deg, #ffeb3b 0%, #fdd835 100%);
+  border-color: #f9a825;
+  color: #f57f17;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.seat-btn:disabled {
+  background: linear-gradient(135deg, #ffeb3b 0%, #fdd835 100%);
+  border-color: #f9a825;
+  color: #f57f17;
+  cursor: not-allowed;
+  opacity: 0.7;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.seat-btn:disabled {
+  cursor: not-allowed;
+}
+
+.seat-number {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.seat-lock {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.7rem;
+}
+
+/* Bus Exit */
+.bus-exit {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+  color: white;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Selected Seats Summary */
+.selected-seats-summary {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px solid var(--primary, #2e7d32);
+}
+
+.summary-header {
+  font-size: 1.1rem;
+  color: var(--primary, #2e7d32);
+  margin-bottom: 1rem;
+}
+
+.seats-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.seat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--accent, #f9a825);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.seat-remove {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.seat-remove:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.1);
+}
+
+.no-seats-selected {
+  color: #999;
+  font-style: italic;
+}
+
+/* Loading & Error States */
+.seat-picker-loading,
+.seat-picker-error {
+  text-align: center;
+  padding: 3rem;
+}
+
+.seat-picker-loading .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary, #2e7d32);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.seat-picker-error p {
+  color: #d32f2f;
+  margin-bottom: 1rem;
+}
+
+.btn-retry {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary, #2e7d32);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-retry:hover {
+  background: #1b5e20;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .seat-picker {
+    padding: 1rem;
+  }
+
+  .bus-container {
+    max-width: 100%;
+    padding: 1rem 0.5rem;
+  }
+
+  .seat-legend {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .seat-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 0.75rem;
+  }
+
+  .aisle {
+    width: 20px;
+  }
+
+  .row-label {
+    min-width: 25px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .seat-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 0.7rem;
+  }
+
+  .seat-sample {
+    width: 35px;
+    height: 35px;
+  }
+
+  .legend-item {
+    font-size: 0.85rem;
+  }
+}

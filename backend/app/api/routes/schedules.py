@@ -30,6 +30,8 @@ async def get_available_schedules(
     Public endpoint for customers to search schedules
     """
     try:
+        print(f"🔍 get_available_schedules: origin={origin}, destination={destination}, journey_date={journey_date}")
+        
         conditions = ["bs.is_active = true", "b.is_active = true", "r.is_active = true"]
         params = []
         param_count = 1
@@ -88,15 +90,20 @@ async def get_available_schedules(
         """
         
         results = await database.fetch_all(query, *params)
+        print(f"📦 Found {len(results)} total schedule records from DB")
         
         schedules = []
         for row in results:
             # Filter by journey date if provided
             if journey_date:
                 journey_dt = datetime.strptime(journey_date, '%Y-%m-%d')
-                day_name = journey_dt.strftime('%A')
+                # Get abbreviated day name (Mon, Tue, Wed, etc.)
+                day_name = journey_dt.strftime('%a')
+                print(f"🗓️ Journey day: {day_name}, Operating days: {row['operating_days']}")
                 
+                # Check if bus operates on this day
                 if row['operating_days'] and day_name not in row['operating_days']:
+                    print(f"⏭️ Skipping schedule {row['schedule_id']} - bus doesn't operate on {day_name}")
                     continue
             
             schedules.append({
@@ -128,6 +135,7 @@ async def get_available_schedules(
                 }
             })
         
+        print(f"✅ Returning {len(schedules)} schedules after filtering")
         return {
             "status": "success",
             "data": {
@@ -267,25 +275,55 @@ async def get_seat_availability(
         # Get all booked seats for this schedule and date
         bookings_query = """
             SELECT 
-                t.seat_number
-            FROM tickets t
-            JOIN bookings b ON t.booking_id = b.id
+                b.seat_numbers
+            FROM bookings b
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
             WHERE b.schedule_id = $1
                 AND b.journey_date = $2
                 AND b.booking_status IN ('confirmed', 'completed')
-                AND b.payment_status = 'completed'
-            ORDER BY t.seat_number
+                AND (p.payment_status = 'success' OR b.booking_status = 'confirmed')
         """
         
-        booked_tickets = await database.fetch_all(
+        booking_records = await database.fetch_all(
             bookings_query,
             schedule_id,
-            journey_date
+            date_obj
         )
         
-        booked_seats = [ticket['seat_number'] for ticket in booked_tickets]
+        # Flatten the array of seat numbers from all bookings
+        booked_seats = []
+        for record in booking_records:
+            if record['seat_numbers']:
+                booked_seats.extend(record['seat_numbers'])
+        
+        # Remove duplicates and sort
+        booked_seats = sorted(list(set(booked_seats)))
+        
+        # Get locked seats (temporary locks during booking process)
+        # Clean expired locks first
+        await database.execute(
+            "DELETE FROM seat_locks WHERE expires_at < CURRENT_TIMESTAMP"
+        )
+        
+        locked_seats_query = """
+            SELECT DISTINCT seat_number
+            FROM seat_locks
+            WHERE schedule_id = $1
+              AND journey_date = $2
+              AND expires_at > CURRENT_TIMESTAMP
+        """
+        
+        locked_records = await database.fetch_all(
+            locked_seats_query,
+            schedule_id,
+            date_obj
+        )
+        
+        locked_seats = sorted([record['seat_number'] for record in locked_records])
+        
         total_seats = schedule['total_seats']
-        available_seats_count = total_seats - len(booked_seats)
+        unavailable_count = len(booked_seats) + len(locked_seats)
+        available_seats_count = total_seats - unavailable_count
         
         return {
             "status": "success",
@@ -306,6 +344,7 @@ async def get_seat_availability(
                 "seatAvailability": {
                     "totalSeats": total_seats,
                     "bookedSeats": booked_seats,
+                    "lockedSeats": locked_seats,
                     "availableSeatsCount": available_seats_count,
                     "isFullyBooked": available_seats_count == 0
                 }
@@ -315,6 +354,9 @@ async def get_seat_availability(
     except (NotFoundException, BadRequestException):
         raise
     except Exception as e:
+        import traceback
+        print(f"Error in get_seat_availability: {str(e)}")
+        print(traceback.format_exc())
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch seat availability: {str(e)}"
@@ -334,17 +376,40 @@ async def get_vendor_schedules(
     Get all schedules for vendor's buses
     """
     try:
-        vendor_id = current_user.get('vendor_id')
+        print(f"🔍 get_vendor_schedules called by user: {current_user.get('id')}, role: {current_user.get('role')}")
+        
+        # Get vendor_id from vendors table
+        vendor_id = None
+        if current_user.get('role') == 'vendor':
+            vendor_query = """
+                SELECT vendor_id FROM vendors WHERE user_id = $1
+            """
+            vendor_result = await database.fetch_one(vendor_query, current_user.get('id'))
+            if vendor_result:
+                vendor_id = vendor_result['vendor_id']
+            print(f"📊 Vendor lookup: user_id={current_user.get('id')}, vendor_id={vendor_id}")
         
         conditions = []
         params = []
         param_count = 1
         
         # If vendor, filter by vendor_id
-        if current_user.get('role') == 'vendor' and vendor_id:
-            conditions.append(f"v.vendor_id = ${param_count}")
-            params.append(vendor_id)
-            param_count += 1
+        if current_user.get('role') == 'vendor':
+            if vendor_id:
+                conditions.append(f"v.vendor_id = ${param_count}")
+                params.append(vendor_id)
+                param_count += 1
+                print(f"✅ Added vendor filter: vendor_id={vendor_id}")
+            else:
+                # No vendor_id found, return empty result
+                print(f"⚠️ No vendor_id found for user_id={current_user.get('id')}")
+                return {
+                    "status": "success",
+                    "data": {
+                        "schedules": [],
+                        "total": 0
+                    }
+                }
         
         if bus_id:
             conditions.append(f"bs.bus_id = ${param_count}")
@@ -384,7 +449,7 @@ async def get_vendor_schedules(
                     SELECT COUNT(*)
                     FROM bookings bk
                     WHERE bk.schedule_id = bs.schedule_id
-                    AND bk.status = 'completed'
+                    AND bk.booking_status = 'completed'
                 ) as total_bookings
             FROM bus_schedules bs
             JOIN buses b ON bs.bus_id = b.bus_id
@@ -394,7 +459,10 @@ async def get_vendor_schedules(
             ORDER BY bs.departure_time
         """
         
+        print(f"🔍 Query params: {params}")
+        print(f"📝 WHERE clause: {where_clause}")
         results = await database.fetch_all(query, *params)
+        print(f"📦 Found {len(results)} schedules")
         
         schedules = []
         for row in results:
@@ -548,11 +616,19 @@ async def update_schedule(
     current_user: Dict = Depends(require_role("vendor", "system_admin"))
 ):
     """
-    Update an existing schedule
-    Vendors can only update schedules for their own buses
+    Update schedule operating days and status
+    Vendors can only update operating_days and is_active for their schedules
     """
     try:
-        vendor_id = current_user.get('vendor_id')
+        # Get vendor_id from vendors table
+        vendor_id = None
+        if current_user.get('role') == 'vendor':
+            vendor_query = """
+                SELECT vendor_id FROM vendors WHERE user_id = $1
+            """
+            vendor_result = await database.fetch_one(vendor_query, current_user.get('id'))
+            if vendor_result:
+                vendor_id = vendor_result['vendor_id']
         
         # Check if schedule exists and belongs to vendor
         check_query = """
@@ -567,24 +643,39 @@ async def update_schedule(
             raise NotFoundException("Schedule not found")
         
         # Verify ownership if vendor
-        if current_user.get('role') == 'vendor' and existing['vendor_id'] != vendor_id:
-            raise BadRequestException("You can only update schedules for your own buses")
+        if current_user.get('role') == 'vendor':
+            if not vendor_id or existing['vendor_id'] != vendor_id:
+                raise BadRequestException("You can only update schedules for your own buses")
         
-        # Build update query dynamically
+        # Only allow updating operating_days and is_active
         update_fields = []
         params = []
         param_count = 1
         
-        allowed_fields = ['bus_id', 'route_id', 'departure_time', 'arrival_time', 'price', 'operating_days', 'is_active']
+        # Map camelCase to snake_case
+        field_mapping = {
+            'operatingDays': 'operating_days',
+            'operating_days': 'operating_days',
+            'isActive': 'is_active',
+            'is_active': 'is_active'
+        }
         
-        for field in allowed_fields:
-            if field in schedule_data:
-                update_fields.append(f"{field} = ${param_count}")
-                params.append(schedule_data[field])
+        for api_field, db_field in field_mapping.items():
+            if api_field in schedule_data:
+                update_fields.append(f"{db_field} = ${param_count}")
+                params.append(schedule_data[api_field])
                 param_count += 1
+                break  # Avoid duplicate updates
+        
+        # Check for is_active separately to avoid duplication
+        if ('isActive' in schedule_data or 'is_active' in schedule_data) and not any('is_active' in f for f in update_fields):
+            value = schedule_data.get('isActive', schedule_data.get('is_active'))
+            update_fields.append(f"is_active = ${param_count}")
+            params.append(value)
+            param_count += 1
         
         if not update_fields:
-            raise BadRequestException("No fields to update")
+            raise BadRequestException("No valid fields to update. Only operating_days and is_active can be modified.")
         
         # Add updated_at
         update_fields.append(f"updated_at = ${param_count}")

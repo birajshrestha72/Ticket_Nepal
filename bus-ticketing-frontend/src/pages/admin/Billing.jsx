@@ -30,7 +30,12 @@ const Billing = () => {
     totalRevenue: 0,
     completedTransactions: 0,
     pendingTransactions: 0,
-    refundedTransactions: 0
+    refundedTransactions: 0,
+    pendingAmount: 0,
+    refundedAmount: 0,
+    averageTransactionValue: 0,
+    todayRevenue: 0,
+    monthRevenue: 0
   });
 
   useEffect(() => {
@@ -46,6 +51,8 @@ const Billing = () => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
+      console.log('🔑 Token exists:', !!token);
+      
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -59,37 +66,49 @@ const Billing = () => {
       // Add date filters
       if (filters.dateFrom) {
         params.append('date_from', filters.dateFrom);
+        console.log('📅 Date from:', filters.dateFrom);
       }
       if (filters.dateTo) {
         params.append('date_to', filters.dateTo);
+        console.log('📅 Date to:', filters.dateTo);
       }
 
       // Add status filter
       if (filters.paymentStatus && filters.paymentStatus !== 'all') {
         params.append('status', filters.paymentStatus);
+        console.log('📊 Status filter:', filters.paymentStatus);
       }
 
       // Add bus filter
       if (filters.busId) {
         params.append('bus_id', filters.busId);
+        console.log('🚌 Bus filter:', filters.busId);
       }
 
-      const response = await fetch(`${API_URL}/bookings/vendor/all?${params}`, {
+      const url = `${API_URL}/bookings/vendor/all?${params}`;
+      console.log('📡 Fetching from:', url);
+
+      const response = await fetch(url, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
+      console.log('📊 Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Error response:', errorData);
         throw new Error(errorData.detail || 'Failed to fetch transactions');
       }
 
       const data = await response.json();
+      console.log('📦 Response data:', data);
       
       if (data.status === 'success' && data.data) {
         const bookings = data.data.bookings || [];
+        console.log('✅ Bookings received:', bookings.length);
         
         // Transform bookings to transaction format
         const transformedTransactions = bookings.map(booking => ({
@@ -134,12 +153,35 @@ const Billing = () => {
     const pending = transactions.filter(t => t.payment_status === 'pending');
     const refunded = transactions.filter(t => t.payment_status === 'refunded');
     
+    const totalRevenue = completed.reduce((sum, t) => sum + (t.total_amount || 0), 0);
+    const pendingAmount = pending.reduce((sum, t) => sum + (t.total_amount || 0), 0);
+    const refundedAmount = refunded.reduce((sum, t) => sum + (t.total_amount || 0), 0);
+    
+    // Calculate today's revenue
+    const today = new Date().toISOString().split('T')[0];
+    const todayTransactions = completed.filter(t => t.transaction_date?.split('T')[0] === today);
+    const todayRevenue = todayTransactions.reduce((sum, t) => sum + (t.total_amount || 0), 0);
+    
+    // Calculate this month's revenue
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const monthTransactions = completed.filter(t => {
+      const date = new Date(t.transaction_date);
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    });
+    const monthRevenue = monthTransactions.reduce((sum, t) => sum + (t.total_amount || 0), 0);
+    
     setStats({
       totalTransactions: transactions.length,
-      totalRevenue: completed.reduce((sum, t) => sum + (t.total_amount || 0), 0),
+      totalRevenue,
       completedTransactions: completed.length,
       pendingTransactions: pending.length,
-      refundedTransactions: refunded.length
+      refundedTransactions: refunded.length,
+      pendingAmount,
+      refundedAmount,
+      averageTransactionValue: completed.length > 0 ? totalRevenue / completed.length : 0,
+      todayRevenue,
+      monthRevenue
     });
   };
 
@@ -286,32 +328,51 @@ const Billing = () => {
         <div className="stat-card primary">
           <div className="stat-icon">💵</div>
           <div className="stat-info">
-            <p className="stat-label">Total Revenue</p>
+            <p className="stat-label">Total Revenue (Completed)</p>
             <h3 className="stat-value">Rs. {stats.totalRevenue.toLocaleString()}</h3>
-          </div>
-        </div>
-
-        <div className="stat-card success">
-          <div className="stat-icon">✓</div>
-          <div className="stat-info">
-            <p className="stat-label">Completed</p>
-            <h3 className="stat-value">{stats.completedTransactions}</h3>
+            <p className="stat-subtext">{stats.completedTransactions} completed transactions</p>
           </div>
         </div>
 
         <div className="stat-card warning">
           <div className="stat-icon">⏳</div>
           <div className="stat-info">
-            <p className="stat-label">Pending</p>
-            <h3 className="stat-value">{stats.pendingTransactions}</h3>
+            <p className="stat-label">Pending Payments</p>
+            <h3 className="stat-value">Rs. {stats.pendingAmount.toLocaleString()}</h3>
+            <p className="stat-subtext">{stats.pendingTransactions} pending transactions</p>
+          </div>
+        </div>
+
+        <div className="stat-card success">
+          <div className="stat-icon">📅</div>
+          <div className="stat-info">
+            <p className="stat-label">Today's Revenue</p>
+            <h3 className="stat-value">Rs. {stats.todayRevenue.toLocaleString()}</h3>
           </div>
         </div>
 
         <div className="stat-card info">
+          <div className="stat-icon">📊</div>
+          <div className="stat-info">
+            <p className="stat-label">This Month</p>
+            <h3 className="stat-value">Rs. {stats.monthRevenue.toLocaleString()}</h3>
+          </div>
+        </div>
+
+        <div className="stat-card secondary">
+          <div className="stat-icon">📈</div>
+          <div className="stat-info">
+            <p className="stat-label">Average Transaction</p>
+            <h3 className="stat-value">Rs. {Math.round(stats.averageTransactionValue).toLocaleString()}</h3>
+          </div>
+        </div>
+
+        <div className="stat-card danger">
           <div className="stat-icon">↩️</div>
           <div className="stat-info">
             <p className="stat-label">Refunded</p>
-            <h3 className="stat-value">{stats.refundedTransactions}</h3>
+            <h3 className="stat-value">Rs. {stats.refundedAmount.toLocaleString()}</h3>
+            <p className="stat-subtext">{stats.refundedTransactions} refunded</p>
           </div>
         </div>
       </div>
