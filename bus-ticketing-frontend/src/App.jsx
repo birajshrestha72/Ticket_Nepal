@@ -44,7 +44,7 @@ import VendorProfile from './pages/admin/VendorProfile.jsx';
 import BusSeatManagement from './pages/admin/BusSeatManagement.jsx';
 import BusForm from './pages/admin/BusForm.jsx';
 import VendorForm from './pages/admin/VendorForm.jsx';
-import ManageBuses from './pages/admin/ManageBuses.jsx';
+// ManageBuses.jsx removed - duplicate of AdminBuses.jsx
 
 // superadmin
 import SuperAdminDashboard from './pages/superadmin/SuperAdminDashboard.jsx';

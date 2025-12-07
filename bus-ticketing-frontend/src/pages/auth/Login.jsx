@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import '../../css/login.css';
 
@@ -13,7 +11,7 @@ const API_URL = 'http://localhost:8000/api/v1';
  */
 const Login = () => {
   const navigate = useNavigate();
-  const { loginAs } = useAuth();
+  const { loginAs, loginWithGoogleProvider } = useAuth();
   
   // Form state
   const [formData, setFormData] = useState({
@@ -105,39 +103,16 @@ const Login = () => {
     setError('');
 
     try {
-      // Firebase Google sign in
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+      // Use AuthContext's loginWithGoogleProvider method
+      const result = await loginWithGoogleProvider();
       
-      // Get ID token
-      const idToken = await user.getIdToken();
-      
-      // Send to backend
-      const response = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken: idToken,
-          role: 'customer'
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || 'Google login failed');
+      if (!result.success) {
+        throw new Error(result.error || 'Google login failed');
       }
 
-      // Success
-      const { user: userData, token } = data.data;
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
+      // Success - redirect based on role
+      const userData = result.user;
       
-      loginAs(userData.role);
-      
-      // Redirect based on role
       if (userData.role === 'system_admin') {
         navigate('/superadmin');
       } else if (userData.role === 'vendor') {

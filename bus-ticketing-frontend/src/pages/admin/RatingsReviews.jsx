@@ -29,121 +29,16 @@ const RatingsReviews = () => {
     oneStar: 0
   });
 
-  // Sample reviews data (replace with API call)
-  const sampleReviews = [
-    {
-      review_id: 'REV-001',
-      booking_id: 'BK-001',
-      user_id: 'USER-123',
-      anonymous_name: 'User #1234',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Kathmandu → Pokhara',
-      rating: 5,
-      review_text: 'Excellent service! The bus was clean, comfortable, and arrived on time. The driver was professional and the staff was courteous. Highly recommend!',
-      travel_date: '2025-11-20',
-      review_date: '2025-11-21T10:30:00',
-      helpful_count: 12,
-      verified: true
-    },
-    {
-      review_id: 'REV-002',
-      booking_id: 'BK-002',
-      user_id: 'USER-456',
-      anonymous_name: 'User #4567',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Pokhara → Chitwan',
-      rating: 4,
-      review_text: 'Good experience overall. The bus was comfortable but the AC was not working properly. Everything else was fine.',
-      travel_date: '2025-11-19',
-      review_date: '2025-11-20T14:15:00',
-      helpful_count: 8,
-      verified: true
-    },
-    {
-      review_id: 'REV-003',
-      booking_id: 'BK-003',
-      user_id: 'USER-789',
-      anonymous_name: 'User #7890',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Kathmandu → Butwal',
-      rating: 5,
-      review_text: 'Perfect journey! Spacious seats, clean restroom, and entertainment system worked great. Will book again.',
-      travel_date: '2025-11-18',
-      review_date: '2025-11-19T09:20:00',
-      helpful_count: 15,
-      verified: true
-    },
-    {
-      review_id: 'REV-004',
-      booking_id: 'BK-004',
-      user_id: 'USER-234',
-      anonymous_name: 'User #2345',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Dharan → Kathmandu',
-      rating: 3,
-      review_text: 'Average experience. The bus was okay but we had to wait 30 minutes for departure. Driver was polite though.',
-      travel_date: '2025-11-17',
-      review_date: '2025-11-18T16:45:00',
-      helpful_count: 5,
-      verified: true
-    },
-    {
-      review_id: 'REV-005',
-      booking_id: 'BK-005',
-      user_id: 'USER-567',
-      anonymous_name: 'User #5678',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Pokhara → Kathmandu',
-      rating: 4,
-      review_text: 'Comfortable seats and smooth ride. Only complaint is that the charging ports were not working.',
-      travel_date: '2025-11-16',
-      review_date: '2025-11-17T11:30:00',
-      helpful_count: 7,
-      verified: true
-    },
-    {
-      review_id: 'REV-006',
-      booking_id: 'BK-006',
-      user_id: 'USER-890',
-      anonymous_name: 'User #8901',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Kathmandu → Nepalgunj',
-      rating: 2,
-      review_text: 'Not satisfied. Bus was delayed by 1 hour and the seats were not as comfortable as advertised.',
-      travel_date: '2025-11-15',
-      review_date: '2025-11-16T08:15:00',
-      helpful_count: 3,
-      verified: false
-    },
-    {
-      review_id: 'REV-007',
-      booking_id: 'BK-007',
-      user_id: 'USER-345',
-      anonymous_name: 'User #3456',
-      bus_number: 'BA 2 KHA 1234',
-      route: 'Chitwan → Kathmandu',
-      rating: 5,
-      review_text: 'Amazing service! Professional driver, clean bus, and on-time departure. Best bus service I have used.',
-      travel_date: '2025-11-14',
-      review_date: '2025-11-15T13:00:00',
-      helpful_count: 20,
-      verified: true
-    },
-    {
-      review_id: 'REV-008',
-      booking_id: 'BK-008',
-      user_id: 'USER-678',
-      anonymous_name: 'User #6789',
-      bus_number: 'BA 2 KHA 5678',
-      route: 'Kathmandu → Biratnagar',
-      rating: 4,
-      review_text: 'Good service. Bus was clean and staff was helpful. Would have given 5 stars if the WiFi was working.',
-      travel_date: '2025-11-13',
-      review_date: '2025-11-14T10:45:00',
-      helpful_count: 6,
-      verified: true
-    }
-  ];
+  // Pagination
+  const [pagination, setPagination] = useState({
+    limit: 20,
+    offset: 0,
+    total: 0,
+    hasMore: false
+  });
+
+  // Remove sample data - now using real API
+  // Reviews now loaded from API
 
   useEffect(() => {
     fetchReviews();
@@ -155,21 +50,97 @@ const RatingsReviews = () => {
 
   const fetchReviews = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // In production, replace with actual API call
-      // const token = localStorage.getItem('token');
-      // const response = await fetch(`${API_URL}/reviews/vendor`, {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setReviews(data.data?.reviews || []);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Get current user to find vendor_id
+      const userResponse = await fetch(`${API_URL}/auth/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = await userResponse.json();
+      const vendorId = userData.data?.vendor_id || userData.data?.user_id;
+
+      if (!vendorId) {
+        throw new Error('Vendor ID not found');
+      }
+
+      // Fetch reviews for this vendor
+      const params = new URLSearchParams({
+        limit: pagination.limit.toString(),
+        offset: pagination.offset.toString()
+      });
+
+      const response = await fetch(`${API_URL}/reviews/vendor/${vendorId}?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch reviews');
+      }
+
+      const data = await response.json();
       
-      // Simulated API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setReviews(sampleReviews);
+      if (data.status === 'success' && data.data) {
+        const fetchedReviews = data.data.reviews || [];
+        
+        // Transform data to match component format
+        const transformedReviews = fetchedReviews.map(review => ({
+          review_id: `REV-${review.id}`,
+          booking_id: `BK-${review.booking_id}`,
+          user_id: review.user_id,
+          anonymous_name: review.reviewer_name || `User #${review.user_id}`,
+          bus_number: review.bus_number,
+          route: 'N/A', // Can be enhanced if route data is available
+          rating: review.overall_rating,
+          review_text: review.comment || 'No comment provided',
+          travel_date: review.journey_date,
+          review_date: review.created_at,
+          helpful_count: 0, // Not in current schema
+          verified: true,
+          cleanliness_rating: review.cleanliness_rating,
+          punctuality_rating: review.punctuality_rating,
+          driver_behavior_rating: review.driver_behavior_rating,
+          comfort_rating: review.comfort_rating,
+          safety_rating: review.safety_rating
+        }));
+
+        setReviews(transformedReviews);
+        
+        // Update pagination
+        if (data.data.pagination) {
+          setPagination({
+            limit: data.data.pagination.limit,
+            offset: data.data.pagination.offset,
+            total: data.data.pagination.total,
+            hasMore: data.data.pagination.hasMore
+          });
+        }
+
+        // Update stats if available
+        if (data.data.statistics) {
+          const avgRating = data.data.statistics.avg_overall || 0;
+          setStats(prev => ({
+            ...prev,
+            averageRating: parseFloat(avgRating).toFixed(1),
+            totalReviews: data.data.statistics.review_count || 0
+          }));
+        }
+      } else {
+        setReviews([]);
+      }
     } catch (err) {
       console.error('Error fetching reviews:', err);
       setError(err.message);
+      setReviews([]);
     } finally {
       setLoading(false);
     }

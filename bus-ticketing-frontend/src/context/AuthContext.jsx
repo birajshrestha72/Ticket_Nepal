@@ -42,10 +42,10 @@ export const AuthProvider = ({ children }) => {
         return data.data.role || 'customer';
       }
       
-      // Default to customer if endpoint fails
+      // Silent fallback - Firebase backend not configured
       return 'customer';
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      // Silent fallback
       return 'customer';
     }
   };
@@ -75,10 +75,12 @@ export const AuthProvider = ({ children }) => {
         const data = await response.json();
         return data.data;
       }
+      // Silent fallback - Firebase backend not configured
+      return null;
     } catch (error) {
-      console.error('Error syncing user with backend:', error);
+      // Silent fallback
+      return null;
     }
-    return null;
   };
 
   /**
@@ -88,16 +90,32 @@ export const AuthProvider = ({ children }) => {
     if (firebaseUser) {
       try {
         const token = await firebaseUser.getIdToken();
-        const role = await fetchUserRole(firebaseUser);
+        
+        // Fetch complete user data from backend
+        const response = await fetch(`${API_URL}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        let backendUserData = null;
+        if (response.ok) {
+          const data = await response.json();
+          backendUserData = data.data.user; // Extract user object from response
+        }
         
         const userData = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          displayName: backendUserData?.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          name: backendUserData?.name || firebaseUser.displayName || firebaseUser.email?.split('@')[0],
+          phone: backendUserData?.phone || null,
           photoURL: firebaseUser.photoURL,
           emailVerified: firebaseUser.emailVerified,
-          role: role,
-          token: token
+          role: backendUserData?.role || 'customer',
+          token: token,
+          isFirebaseUser: true  // Flag to indicate this is a Firebase user
         };
 
         setUser(userData);

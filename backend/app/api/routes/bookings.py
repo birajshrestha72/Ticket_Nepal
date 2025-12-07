@@ -312,7 +312,19 @@ async def get_my_bookings(
     Returns booking history with bus, route, and payment details
     """
     try:
+        # Handle both Firebase tokens (uid) and JWT tokens (id)
+        uid = current_user.get("uid")
         user_id = current_user.get("id")
+        email = current_user.get("email")
+        
+        # Get actual user_id from database if we have Firebase UID
+        if uid and not user_id:
+            user_record = await database.fetch_one(
+                "SELECT user_id FROM users WHERE firebase_uid = $1 OR email = $2",
+                uid, email
+            )
+            if user_record:
+                user_id = user_record["user_id"]
         
         if not user_id:
             raise HTTPException(

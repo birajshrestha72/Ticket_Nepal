@@ -23,10 +23,9 @@ const CustomerDashboard = () => {
   const [user, setUser] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
-    full_name: '',
+    name: '',
     email: '',
-    phone: '',
-    address: ''
+    phone: ''
   });
   
   // Bookings state
@@ -40,10 +39,9 @@ const CustomerDashboard = () => {
       const parsedUser = JSON.parse(userData);
       setUser(parsedUser);
       setProfileData({
-        full_name: parsedUser.full_name || '',
+        name: parsedUser.name || parsedUser.displayName || '',
         email: parsedUser.email || '',
-        phone: parsedUser.phone || '',
-        address: parsedUser.address || ''
+        phone: parsedUser.phone || ''
       });
     }
     setLoading(false);
@@ -68,6 +66,11 @@ const CustomerDashboard = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // Firebase user not synced or invalid token - silent fallback
+          setBookings([]);
+          return;
+        }
         throw new Error('Failed to fetch bookings');
       }
 
@@ -78,6 +81,7 @@ const CustomerDashboard = () => {
     } catch (err) {
       console.error('Error fetching bookings:', err);
       setError(err.message);
+      setBookings([]);  // Show empty instead of error
     } finally {
       setBookingsLoading(false);
     }
@@ -93,7 +97,7 @@ const CustomerDashboard = () => {
   const handleProfileSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/users/profile`, {
+      const response = await fetch(`${API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -124,10 +128,9 @@ const CustomerDashboard = () => {
   const handleCancelEdit = () => {
     // Reset to original user data
     setProfileData({
-      full_name: user.full_name || '',
+      name: user.name || user.displayName || '',
       email: user.email || '',
-      phone: user.phone || '',
-      address: user.address || ''
+      phone: user.phone || ''
     });
     setIsEditingProfile(false);
   };
@@ -191,9 +194,9 @@ const CustomerDashboard = () => {
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
           <div className="user-avatar">
-            {user.full_name?.charAt(0).toUpperCase() || 'U'}
+            {(user.displayName || user.name)?.charAt(0).toUpperCase() || 'U'}
           </div>
-          <h3 className="user-name">{user.full_name || 'User'}</h3>
+          <h3 className="user-name">{user.displayName || user.name || 'User'}</h3>
           <p className="user-email">{user.email}</p>
         </div>
 
@@ -251,7 +254,7 @@ const CustomerDashboard = () => {
           {/* Welcome Section */}
           <div className="welcome-section">
             <h1 className="dashboard-title">
-              Welcome back, {user.full_name?.split(' ')[0] || 'User'}! 👋
+              Welcome back, {(user.displayName || user.name)?.split(' ')[0] || 'User'}! 👋
             </h1>
             <p className="dashboard-subtitle">
               Manage your bookings and profile from your dashboard
@@ -310,7 +313,7 @@ const CustomerDashboard = () => {
                 <div className="profile-view">
                   <div className="profile-field">
                     <label className="field-label">Full Name</label>
-                    <p className="field-value">{user.full_name || 'Not provided'}</p>
+                    <p className="field-value">{user.displayName || user.name || 'Not provided'}</p>
                   </div>
                   <div className="profile-field">
                     <label className="field-label">Email</label>
@@ -319,10 +322,6 @@ const CustomerDashboard = () => {
                   <div className="profile-field">
                     <label className="field-label">Phone</label>
                     <p className="field-value">{user.phone || 'Not provided'}</p>
-                  </div>
-                  <div className="profile-field">
-                    <label className="field-label">Address</label>
-                    <p className="field-value">{user.address || 'Not provided'}</p>
                   </div>
                   <div className="profile-field">
                     <label className="field-label">Account Type</label>
@@ -341,9 +340,9 @@ const CustomerDashboard = () => {
                     <label className="form-label">Full Name</label>
                     <input
                       type="text"
-                      name="full_name"
+                      name="name"
                       className="form-input"
-                      value={profileData.full_name}
+                      value={profileData.name}
                       onChange={handleProfileChange}
                     />
                   </div>
@@ -367,17 +366,6 @@ const CustomerDashboard = () => {
                       value={profileData.phone}
                       onChange={handleProfileChange}
                       placeholder="9851234567"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Address</label>
-                    <textarea
-                      name="address"
-                      className="form-input"
-                      value={profileData.address}
-                      onChange={handleProfileChange}
-                      rows="3"
-                      placeholder="Enter your address"
                     />
                   </div>
                 </div>

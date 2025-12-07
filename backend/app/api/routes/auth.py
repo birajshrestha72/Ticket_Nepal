@@ -15,7 +15,7 @@ from app.models.user import (
     AuthResponse
 )
 from app.core.dependencies import get_current_user
-from app.core.security import hash_password, verify_password, create_access_token
+from app.core.security import hash_password, verify_password, create_access_token, verify_firebase_token
 from app.core.exceptions import (
     ConflictException,
     UnauthorizedException,
@@ -24,7 +24,6 @@ from app.core.exceptions import (
     ForbiddenException
 )
 from app.config.database import database
-from app.config.firebase import verify_firebase_token
 
 
 router = APIRouter()
@@ -223,13 +222,29 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
     Get current user profile
     Login bhayeko user ko details dekhaucha
     """
-    user = await database.fetch_one(
-        """
-        SELECT user_id, name, email, phone, role, auth_provider, created_at, last_login
-        FROM users WHERE user_id = $1
-        """,
-        current_user["id"]
-    )
+    # Handle both Firebase tokens (uid) and JWT tokens (id)
+    uid = current_user.get("uid")
+    user_id = current_user.get("id")
+    email = current_user.get("email")
+    
+    if user_id:
+        # JWT token - use user_id (integer)
+        user = await database.fetch_one(
+            """
+            SELECT user_id, name, email, phone, role, auth_provider, created_at, last_login
+            FROM users WHERE user_id = $1
+            """,
+            user_id
+        )
+    else:
+        # Firebase token - use firebase_uid (string)
+        user = await database.fetch_one(
+            """
+            SELECT user_id, name, email, phone, role, auth_provider, created_at, last_login
+            FROM users WHERE firebase_uid = $1 OR email = $2
+            """,
+            uid, email
+        )
     
     if not user:
         raise NotFoundException("User not found")
@@ -260,6 +275,23 @@ async def update_profile(
     Update user profile
     User ko profile update garcha (name, phone)
     """
+    # Get actual user_id for both Firebase and JWT tokens
+    uid = current_user.get("uid")
+    user_id = current_user.get("id")
+    email = current_user.get("email")
+    
+    # If Firebase token, get user_id from database
+    if uid and not user_id:
+        user_record = await database.fetch_one(
+            "SELECT user_id FROM users WHERE firebase_uid = $1 OR email = $2",
+            uid, email
+        )
+        if user_record:
+            user_id = user_record["user_id"]
+    
+    if not user_id:
+        raise BadRequestException("User ID not found")
+    
     # Build dynamic update query
     updates = []
     values = []
@@ -282,7 +314,7 @@ async def update_profile(
     updates.append("updated_at = CURRENT_TIMESTAMP")
     
     # Add user_id for WHERE clause
-    values.append(current_user["id"])
+    values.append(user_id)
     
     # Execute update
     user = await database.fetch_one(

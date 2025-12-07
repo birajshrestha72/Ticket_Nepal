@@ -42,12 +42,17 @@
 
 ### ⚠️ **STILL USING STATIC DATA:**
 
-#### 1. **Landing.jsx** - ❌ STATIC DATA
+#### 1. **Landing.jsx** - ✅ NOW DYNAMIC
 **Location:** `/bus-ticketing-frontend/src/pages/common/Landing.jsx`
 
-**Static Data Found:**
+**Status:** FULLY INTEGRATED WITH DATABASE (Updated Dec 5, 2025)
+
+**APIs Used:**
 ```javascript
-// Lines 46-86: Mock data with setTimeout
+// Lines 32-67: Dynamic data fetching with Promise.all
+fetch(`${API_URL}/stats/summary`)           // System statistics
+fetch(`${API_URL}/stats/popular-routes?limit=6`)  // Popular routes
+fetch(`${API_URL}/stats/featured-vendors?limit=6`) // Top vendors
 setPopularRoutes([
   { id: 1, origin: 'Kathmandu', destination: 'Pokhara', distance_km: 200, base_price: 1200, available_schedules: 15 },
   // ... more hardcoded routes
@@ -202,14 +207,14 @@ setBookedSeats(['A1', 'A2', 'B5', 'C3']);
 | AdminSchedules.jsx | ✅ Dynamic | - | - |
 | VendorBookings.jsx | ✅ Dynamic | - | - |
 | AdminBuses.jsx | ✅ Dynamic | - | - |
-| **Landing.jsx** | ❌ Static | HIGH | 2-3 hours |
+| **Landing.jsx** | ✅ Dynamic | - | COMPLETE |
 | **Destinations.jsx** | ❌ Static (Content) | LOW | N/A |
 | **ManageBuses.jsx** | ❌ Static (Unused?) | MEDIUM | 1 hour or DELETE |
 | **RatingsReviews.jsx** | ❌ Static | MEDIUM | 2 hours |
 | **Billing.jsx** | ❌ Static | MEDIUM | 1 hour |
 | **Booking.jsx** | ⚠️ Partial | HIGH | 3-4 hours |
 
-### Overall: **60% Dynamic, 40% Static**
+### Overall: **65% Dynamic, 35% Static** (Updated Dec 5, 2025)
 
 ---
 

@@ -157,20 +157,21 @@ async def verify_firebase_token(token: str) -> Optional[Dict]:
 
 async def verify_token(token: str) -> Optional[Dict]:
     """
-    Verify token - tries Firebase first, then falls back to JWT
+    Verify token - tries JWT first (for email/password logins), then Firebase
     Args:
-        token: Token string (Firebase ID token or JWT)
+        token: Token string (JWT or Firebase ID token)
     Returns:
         Decoded token payload or None if invalid
     """
-    # Try Firebase token first
-    firebase_result = await verify_firebase_token(token)
-    if firebase_result:
-        return firebase_result
-    
-    # Fall back to JWT token
+    # Try JWT token first (for email/password logins)
     jwt_result = decode_access_token(token)
     if jwt_result:
         return {**jwt_result, "firebase": False}
+    
+    # Fall back to Firebase token (for Google sign-in)
+    if firebase_initialized:
+        firebase_result = await verify_firebase_token(token)
+        if firebase_result:
+            return firebase_result
     
     return None

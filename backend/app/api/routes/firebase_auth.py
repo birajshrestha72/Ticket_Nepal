@@ -6,7 +6,7 @@ Handles user synchronization and profile management with Firebase
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from app.config.database import get_db_pool
+from app.config.database import database
 from app.core.security import verify_firebase_token, verify_token
 from datetime import datetime
 
@@ -60,63 +60,60 @@ async def sync_user_with_backend(
     This endpoint should be called after successful Firebase authentication
     to ensure user exists in our database
     """
-    pool = await get_db_pool()
-    
     try:
-        async with pool.acquire() as conn:
-            # Check if user already exists
-            existing_user = await conn.fetchrow("""
-                SELECT user_id, uid, email, display_name, role, created_at
-                FROM users
-                WHERE uid = $1 OR email = $2
-            """, request.uid, request.email)
+        # Check if user already exists
+        existing_user = await database.fetch_one("""
+            SELECT user_id, firebase_uid, email, name, role, created_at
+            FROM users
+            WHERE firebase_uid = $1 OR email = $2
+        """, request.uid, request.email)
             
-            if existing_user:
-                # Update existing user
-                updated_user = await conn.fetchrow("""
-                    UPDATE users
-                    SET 
-                        display_name = COALESCE($1, display_name),
-                        last_login = NOW(),
-                        updated_at = NOW()
-                    WHERE uid = $2 OR email = $3
-                    RETURNING user_id, uid, email, display_name, role, created_at, last_login
-                """, request.display_name, request.uid, request.email)
+        if existing_user:
+            # Update existing user
+            updated_user = await database.fetch_one("""
+                UPDATE users
+                SET 
+                    name = COALESCE($1, name),
+                    last_login = NOW(),
+                    updated_at = NOW()
+                WHERE firebase_uid = $2 OR email = $3
+                RETURNING user_id, firebase_uid, email, name, role, created_at, last_login
+            """, request.display_name, request.uid, request.email)
                 
-                return {
-                    "status": "success",
-                    "message": "User updated successfully",
-                    "data": {
-                        "user_id": updated_user["user_id"],
-                        "uid": updated_user["uid"],
-                        "email": updated_user["email"],
-                        "display_name": updated_user["display_name"],
-                        "role": updated_user["role"],
-                        "created_at": updated_user["created_at"],
-                        "last_login": updated_user["last_login"]
-                    }
+            return {
+                "status": "success",
+                "message": "User updated successfully",
+                "data": {
+                    "user_id": updated_user["user_id"],
+                    "uid": updated_user["firebase_uid"],
+                    "email": updated_user["email"],
+                    "display_name": updated_user["name"],
+                    "role": updated_user["role"],
+                    "created_at": updated_user["created_at"],
+                    "last_login": updated_user["last_login"]
                 }
-            else:
-                # Create new user
-                new_user = await conn.fetchrow("""
-                    INSERT INTO users (uid, email, display_name, role, created_at, updated_at, last_login)
-                    VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW())
-                    RETURNING user_id, uid, email, display_name, role, created_at, last_login
-                """, request.uid, request.email, request.display_name, request.role)
+            }
+        else:
+            # Create new user
+            new_user = await database.fetch_one("""
+                INSERT INTO users (firebase_uid, email, name, role, auth_provider, created_at, updated_at, last_login)
+                VALUES ($1, $2, $3, $4, 'google', NOW(), NOW(), NOW())
+                RETURNING user_id, firebase_uid, email, name, role, created_at, last_login
+            """, request.uid, request.email, request.display_name, request.role)
                 
-                return {
-                    "status": "success",
-                    "message": "User created successfully",
-                    "data": {
-                        "user_id": new_user["user_id"],
-                        "uid": new_user["uid"],
-                        "email": new_user["email"],
-                        "display_name": new_user["display_name"],
-                        "role": new_user["role"],
-                        "created_at": new_user["created_at"],
-                        "last_login": new_user["last_login"]
-                    }
+            return {
+                "status": "success",
+                "message": "User created successfully",
+                "data": {
+                    "user_id": new_user["user_id"],
+                    "uid": new_user["firebase_uid"],
+                    "email": new_user["email"],
+                    "display_name": new_user["name"],
+                    "role": new_user["role"],
+                    "created_at": new_user["created_at"],
+                    "last_login": new_user["last_login"]
                 }
+            }
     
     except Exception as e:
         print(f"Error syncing user: {e}")
@@ -131,52 +128,69 @@ async def get_current_user_profile(
     Get current authenticated user's profile
     Returns user information from database
     """
-    pool = await get_db_pool()
-    
     try:
-        # Get UID from token
+        # Handle both Firebase tokens (uid) and JWT tokens (id)
         uid = current_user.get("uid")
+        user_id = current_user.get("id")
         email = current_user.get("email")
         
-        if not uid and not email:
+        if not uid and not user_id and not email:
             raise HTTPException(status_code=401, detail="Invalid token payload")
         
-        async with pool.acquire() as conn:
-            # Fetch user from database
-            user = await conn.fetchrow("""
+        # Fetch user from database
+        if user_id:
+            # JWT token - use user_id
+            user = await database.fetch_one("""
                 SELECT 
                     user_id, 
-                    uid, 
+                    firebase_uid, 
                     email, 
-                    display_name, 
+                    name,
                     role, 
-                    phone_number,
+                    phone,
                     is_active,
                     email_verified,
                     created_at,
                     last_login
                 FROM users
-                WHERE uid = $1 OR email = $2
+                WHERE user_id = $1
+            """, user_id)
+        else:
+            # Firebase token - use firebase_uid or email
+            user = await database.fetch_one("""
+                SELECT 
+                    user_id, 
+                    firebase_uid, 
+                    email, 
+                    name,
+                    role, 
+                    phone,
+                    is_active,
+                    email_verified,
+                    created_at,
+                    last_login
+                FROM users
+                WHERE firebase_uid = $1 OR email = $2
             """, uid, email)
             
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found in database")
-            
-            return {
-                "status": "success",
-                "data": {
-                    "user_id": user["user_id"],
-                    "uid": user["uid"],
-                    "email": user["email"],
-                    "display_name": user["display_name"],
-                    "role": user["role"],
-                    "phone_number": user["phone_number"],
-                    "is_active": user["is_active"],
-                    "email_verified": user["email_verified"],
-                    "created_at": user["created_at"],
-                    "last_login": user["last_login"]
-                }
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found in database")
+        
+        return {
+            "status": "success",
+            "data": {
+                "user_id": user["user_id"],
+                "uid": user["firebase_uid"],
+                "email": user["email"],
+                "display_name": user["name"],
+                "role": user["role"],
+                "phone_number": user["phone"],
+                "is_active": user["is_active"],
+                "email_verified": user["email_verified"],
+                "created_at": user["created_at"],
+                "last_login": user["last_login"]
             }
+        }
     
     except HTTPException:
         raise
@@ -194,63 +208,67 @@ async def update_user_profile(
     """
     Update current user's profile
     """
-    pool = await get_db_pool()
-    
     try:
+        # Handle both Firebase tokens (uid) and JWT tokens (id)
         uid = current_user.get("uid")
+        user_id = current_user.get("id")
         email = current_user.get("email")
         
-        if not uid and not email:
+        if not uid and not user_id and not email:
             raise HTTPException(status_code=401, detail="Invalid token payload")
         
-        async with pool.acquire() as conn:
-            # Build dynamic update query
-            update_fields = []
-            params = []
-            param_count = 1
-            
-            if display_name is not None:
-                update_fields.append(f"display_name = ${param_count}")
-                params.append(display_name)
-                param_count += 1
-            
-            if phone_number is not None:
-                update_fields.append(f"phone_number = ${param_count}")
-                params.append(phone_number)
-                param_count += 1
-            
-            if not update_fields:
-                raise HTTPException(status_code=400, detail="No fields to update")
-            
-            update_fields.append(f"updated_at = NOW()")
-            
-            # Add WHERE clause parameters
+        # Build dynamic update query
+        update_fields = []
+        params = []
+        param_count = 1
+        
+        if display_name is not None:
+            update_fields.append(f"name = ${param_count}")
+            params.append(display_name)
+            param_count += 1
+        
+        if phone_number is not None:
+            update_fields.append(f"phone = ${param_count}")
+            params.append(phone_number)
+            param_count += 1
+        
+        if not update_fields:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        
+        update_fields.append(f"updated_at = NOW()")
+        
+        # Build WHERE clause based on token type
+        if user_id:
+            where_clause = f"user_id = ${param_count}"
+            params.append(user_id)
+        else:
+            where_clause = f"(uid = ${param_count} OR email = ${param_count + 1})"
             params.extend([uid, email])
-            
-            query = f"""
-                UPDATE users
-                SET {', '.join(update_fields)}
-                WHERE uid = ${param_count} OR email = ${param_count + 1}
-                RETURNING user_id, uid, email, display_name, phone_number, role
-            """
-            
-            updated_user = await conn.fetchrow(query, *params)
-            
-            if not updated_user:
-                raise HTTPException(status_code=404, detail="User not found")
-            
-            return {
-                "status": "success",
-                "message": "Profile updated successfully",
-                "data": {
-                    "user_id": updated_user["user_id"],
-                    "uid": updated_user["uid"],
-                    "email": updated_user["email"],
-                    "display_name": updated_user["display_name"],
-                    "phone_number": updated_user["phone_number"],
-                    "role": updated_user["role"]
-                }
+        
+        query = f"""
+            UPDATE users
+            SET {', '.join(update_fields)}
+            WHERE {where_clause}
+            RETURNING user_id, uid, email, name as display_name, phone as phone_number, role
+        """
+        
+        updated_user = await database.fetch_one(query, *params)
+        
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "status": "success",
+            "message": "Profile updated successfully",
+            "data": {
+                "user_id": updated_user["user_id"],
+                "uid": updated_user["uid"],
+                "email": updated_user["email"],
+                "display_name": updated_user["display_name"],
+                "phone_number": updated_user["phone_number"],
+                "role": updated_user["role"]
             }
+        }
     
     except HTTPException:
         raise

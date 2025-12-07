@@ -31,7 +31,6 @@ async def get_current_user(
         raise UnauthorizedException("Invalid or expired token")
     
     # Extract user info from token
-    user_id = payload.get("id") or payload.get("uid")
     email = payload.get("email")
     role = payload.get("role", "customer")  # Default to customer if role not in token
     
@@ -39,8 +38,8 @@ async def get_current_user(
         raise UnauthorizedException("Invalid token payload")
     
     return {
-        "id": user_id,
-        "uid": payload.get("uid"),
+        "id": payload.get("id"),  # JWT token has id (integer), Firebase token won't have this
+        "uid": payload.get("uid"),  # Firebase token has uid (string), JWT token won't have this
         "email": email,
         "role": role,
         "firebase": payload.get("firebase", False)
@@ -64,7 +63,6 @@ async def get_current_user_from_header(
     if payload is None:
         raise UnauthorizedException("Invalid or expired token")
     
-    user_id = payload.get("id") or payload.get("uid")
     email = payload.get("email")
     role = payload.get("role", "customer")
     
@@ -72,8 +70,8 @@ async def get_current_user_from_header(
         raise UnauthorizedException("Invalid token payload")
     
     return {
-        "id": user_id,
-        "uid": payload.get("uid"),
+        "id": payload.get("id"),  # JWT token has id (integer), Firebase token won't have this
+        "uid": payload.get("uid"),  # Firebase token has uid (string), JWT token won't have this
         "email": email,
         "role": role,
         "firebase": payload.get("firebase", False)
