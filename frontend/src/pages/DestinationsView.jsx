@@ -109,11 +109,30 @@ const Destinations = () => {
   ]
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedProvince, setSelectedProvince] = useState('All')
+  const [sortBy, setSortBy] = useState('name')
 
-  const filteredDestinations = allDestinations.filter((dest) => {
-    const q = searchQuery.toLowerCase()
-    return dest.name.toLowerCase().includes(q) || dest.district.toLowerCase().includes(q) || dest.description.toLowerCase().includes(q)
-  })
+  const categoryOptions = ['All', ...new Set(allDestinations.map((dest) => dest.category))]
+  const provinceOptions = ['All', ...new Set(allDestinations.map((dest) => dest.province))]
+
+  const filteredDestinations = allDestinations
+    .filter((dest) => {
+      const q = searchQuery.toLowerCase()
+      const matchesSearch = dest.name.toLowerCase().includes(q) || dest.district.toLowerCase().includes(q) || dest.description.toLowerCase().includes(q)
+      const matchesCategory = selectedCategory === 'All' || dest.category === selectedCategory
+      const matchesProvince = selectedProvince === 'All' || dest.province === selectedProvince
+      return matchesSearch && matchesCategory && matchesProvince
+    })
+    .sort((a, b) => {
+      if (sortBy === 'altitude-high') {
+        return b.altitude - a.altitude
+      }
+      if (sortBy === 'altitude-low') {
+        return a.altitude - b.altitude
+      }
+      return a.name.localeCompare(b.name)
+    })
 
   return (
     <div className="destinations-page">
@@ -136,6 +155,54 @@ const Destinations = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
             />
+          </div>
+
+          <div className="quick-filters">
+            <div className="filter-group">
+              <span className="filter-label">Category</span>
+              <div className="chip-list">
+                {categoryOptions.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`filter-chip ${selectedCategory === category ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <span className="filter-label">Province</span>
+              <div className="chip-list">
+                {provinceOptions.map((province) => (
+                  <button
+                    key={province}
+                    type="button"
+                    className={`filter-chip ${selectedProvince === province ? 'active' : ''}`}
+                    onClick={() => setSelectedProvince(province)}
+                  >
+                    {province}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <label htmlFor="sort-destination" className="filter-label">Sort By</label>
+              <select
+                id="sort-destination"
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="name">Name (A-Z)</option>
+                <option value="altitude-high">Altitude (High to Low)</option>
+                <option value="altitude-low">Altitude (Low to High)</option>
+              </select>
+            </div>
           </div>
         </div>
 
