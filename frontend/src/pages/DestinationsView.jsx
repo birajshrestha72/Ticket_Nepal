@@ -134,6 +134,15 @@ const Destinations = () => {
       return a.name.localeCompare(b.name)
     })
 
+  const hasActiveFilters = searchQuery.trim() || selectedCategory !== 'All' || selectedProvince !== 'All' || sortBy !== 'name'
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setSelectedCategory('All')
+    setSelectedProvince('All')
+    setSortBy('name')
+  }
+
   return (
     <div className="destinations-page">
       <div className="container">
@@ -208,6 +217,17 @@ const Destinations = () => {
 
         <div className="results-count">
           <p>Showing <strong>{filteredDestinations.length}</strong> destination{filteredDestinations.length === 1 ? '' : 's'}</p>
+          {hasActiveFilters ? (
+            <div className="active-filters-row">
+              <span className="active-filters-text">
+                {searchQuery.trim() ? `Search: "${searchQuery.trim()}"` : null}
+                {selectedCategory !== 'All' ? ` • Category: ${selectedCategory}` : null}
+                {selectedProvince !== 'All' ? ` • Province: ${selectedProvince}` : null}
+                {sortBy !== 'name' ? ` • Sorted: ${sortBy === 'altitude-high' ? 'Altitude High-Low' : 'Altitude Low-High'}` : null}
+              </span>
+              <button type="button" className="clear-filters-btn" onClick={clearFilters}>Clear Filters</button>
+            </div>
+          ) : null}
         </div>
 
         {filteredDestinations.length === 0 ? (
