@@ -1,0 +1,469 @@
+.superadmin-shell {
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-3);
+  background: var(--bg-main);
+  align-items: start;
+}
+
+.superadmin-sidebar {
+  border: 1px solid var(--primary-strong);
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: var(--bg-elevated);
+  padding: var(--space-2);
+  position: sticky;
+  top: calc(var(--space-2) + 72px);
+  align-self: start;
+  box-shadow: 0 16px 34px rgba(3, 14, 30, 0.34);
+}
+
+.superadmin-brand h1 {
+  margin: 0;
+  color: var(--bg-elevated);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.superadmin-brand p {
+  margin: 2px 0 0;
+  color: color-mix(in srgb, var(--accent-soft) 90%, white 10%);
+  font-size: var(--fs-xs);
+}
+
+.superadmin-brand {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--bg-elevated) 20%, transparent 80%);
+  margin-bottom: var(--space-2);
+}
+
+.superadmin-main {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.superadmin-main .admin-header {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(120deg, var(--bg-elevated) 0%, var(--bg-main) 100%);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.superadmin-main .admin-header h2 {
+  margin: 0;
+}
+
+.superadmin-main .admin-header p {
+  margin: 6px 0 0;
+}
+
+.superadmin-tab {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: color-mix(in srgb, var(--bg-elevated) 92%, var(--accent-soft) 8%);
+  text-align: left;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.superadmin-tab:hover {
+  background: color-mix(in srgb, var(--bg-elevated) 14%, transparent 86%);
+  transform: translateX(1px);
+}
+
+.superadmin-tab.active {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+.superadmin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+
+.superadmin-stat {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.superadmin-stat h3 {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+
+.superadmin-stat p {
+  margin: var(--space-1) 0 0;
+  color: var(--primary-soft);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+}
+
+.superadmin-shell .admin-section {
+  border-radius: var(--radius-md);
+}
+
+.superadmin-shell .admin-section > h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-lg);
+}
+
+.superadmin-shell .admin-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.superadmin-shell .admin-form input,
+.superadmin-shell .admin-form select,
+.superadmin-shell .table-filter-row input,
+.superadmin-shell .table-filter-row select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.62rem 0.75rem;
+  background: var(--bg-elevated);
+  font: inherit;
+}
+
+.superadmin-shell .admin-form input:focus,
+.superadmin-shell .admin-form select:focus,
+.superadmin-shell .table-filter-row input:focus,
+.superadmin-shell .table-filter-row select:focus {
+  outline: none;
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.superadmin-shell .admin-form button {
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--bg-elevated);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.superadmin-shell .admin-form button:hover:not(:disabled) {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+  transform: translateY(-1px);
+}
+
+.superadmin-shell .admin-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.superadmin-shell .table-filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.superadmin-shell .admin-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  overflow: auto;
+}
+
+.superadmin-shell .admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.superadmin-shell .admin-table thead th {
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.superadmin-shell .admin-table th,
+.superadmin-shell .admin-table td {
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.superadmin-shell .admin-table tbody tr:hover {
+  background: var(--accent-soft);
+}
+
+.superadmin-shell .admin-table td input,
+.superadmin-shell .admin-table td select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--bg-elevated) 86%, white 14%);
+  padding: 0.36rem 0.56rem;
+  font: inherit;
+  color: var(--text-primary);
+}
+
+.superadmin-shell .admin-table td input:focus,
+.superadmin-shell .admin-table td select:focus {
+  outline: none;
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.superadmin-shell .admin-table tbody tr:has(td input),
+.superadmin-shell .admin-table tbody tr:has(td select) {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent-soft) 55%, white 45%) 0%, var(--bg-elevated) 100%);
+}
+
+.superadmin-shell .row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.superadmin-shell .row-actions button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 0.35rem 0.65rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.superadmin-shell .row-actions button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.superadmin-shell .row-actions button.warn {
+  border-color: #d7b9bc;
+  color: #8a2e39;
+  background: #fff6f7;
+}
+
+.superadmin-shell .row-actions button.warn:hover:not(:disabled) {
+  border-color: #b4515c;
+  background: #ffeef0;
+}
+
+.superadmin-shell .row-actions button.save {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--bg-elevated);
+}
+
+.superadmin-shell .row-actions button.save:hover:not(:disabled) {
+  border-color: var(--primary-strong);
+  background: var(--primary-strong);
+}
+
+.vendor-status {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-1);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.2px;
+}
+
+.vendor-status.verified {
+  background: var(--accent-soft);
+  color: var(--primary-strong);
+  border: 1px solid var(--accent);
+}
+
+.vendor-status.pending {
+  background: var(--bg-main);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.doc-link {
+  color: var(--primary-strong);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.doc-link:hover {
+  text-decoration: underline;
+}
+
+.doc-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-link-btn {
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--primary-strong);
+  padding: 0.35rem 0.6rem;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.doc-link-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.doc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  z-index: 60;
+}
+
+.doc-modal {
+  width: min(980px, 100%);
+  max-height: min(90vh, 920px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.doc-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-modal-head h3 {
+  margin: 0;
+}
+
+.doc-modal-head p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.doc-modal-close {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  color: var(--text-primary);
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.doc-modal-close:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.doc-modal-body {
+  min-height: 0;
+  background: #0f172a;
+}
+
+.doc-preview-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 70vh;
+  border: 0;
+  background: #fff;
+}
+
+.doc-missing {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+@media (max-width: 1024px) {
+  .superadmin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .superadmin-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .superadmin-sidebar .side-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .superadmin-tab {
+    text-align: center;
+  }
+
+  .superadmin-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .superadmin-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .superadmin-sidebar .side-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 900px) {
+  .superadmin-shell {
+    grid-template-columns: 240px 1fr;
+    gap: var(--space-2);
+  }
+
+  .superadmin-sidebar {
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
+  }
+
+  .superadmin-sidebar .side-tabs {
+    gap: 3px;
+  }
+
+  .superadmin-main .admin-form {
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+  }
+
+  .superadmin-shell .table-filter-row {
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+  }
+
+  .superadmin-shell .admin-table th,
+  .superadmin-shell .admin-table td {
+    padding: 0.52rem 0.6rem;
+  }
+}

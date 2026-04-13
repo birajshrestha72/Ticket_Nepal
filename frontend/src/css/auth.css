@@ -1,0 +1,126 @@
+.auth-page-shell {
+  display: grid;
+  place-items: center;
+  padding: var(--space-4) var(--space-2);
+}
+
+.auth-card {
+  width: min(540px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-3);
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: var(--fs-xxl);
+  font-weight: 700;
+}
+
+.auth-card p {
+  margin: var(--space-1) 0 var(--space-2);
+  font-size: var(--fs-sm);
+}
+
+.auth-form {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.auth-form label {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.auth-form input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-elevated);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.auth-form button {
+  margin-top: var(--space-1);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: var(--bg-elevated);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.auth-form button:hover {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+}
+
+.auth-form button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.auth-form .google-btn {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.auth-form .google-btn:hover {
+  background: var(--bg-main);
+}
+
+.auth-error,
+.auth-success,
+.auth-info {
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.auth-error {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.auth-success {
+  color: var(--primary-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+.auth-info {
+  color: var(--text-primary);
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+}
+
+.auth-links {
+  margin-top: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.auth-links a {
+  color: var(--primary-soft);
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  color: var(--primary-strong);
+}

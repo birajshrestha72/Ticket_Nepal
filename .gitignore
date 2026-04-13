@@ -1,0 +1,29 @@
+# Local/system ignores
+.DS_Store
+.venv/
+.vscode/
+
+# Keep docs local; do not publish to remote
+/docs/
+
+# Python
+**/__pycache__/
+*.pyc
+
+# Frontend build artifacts
+frontend/dist/
+frontend/node_modules/
+
+# Local env files
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.payment-demo.example
+backend/.env
+backend/.env.*
+
+# Non-runtime artifacts excluded from git
+backend/payment_demo/
+backend/schema/
+backend/uploads/
+backend/ticket_nepal_app.db

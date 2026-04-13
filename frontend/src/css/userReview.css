@@ -1,0 +1,87 @@
+.user-review-page {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.user-review-header h1 {
+  margin: 0;
+}
+
+.user-review-header p {
+  margin: var(--space-1) 0 0;
+}
+
+.user-review-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-review-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.user-review-card h2 {
+  margin: 0 0 var(--space-2);
+}
+
+.user-review-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.user-review-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  background: var(--bg-main);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.user-review-item p {
+  margin: 0;
+}
+
+.user-review-form {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.user-review-form select,
+.user-review-form textarea,
+.user-review-form button {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  font: inherit;
+  background: var(--bg-elevated);
+}
+
+.user-review-form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.user-review-form button {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--bg-elevated);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.user-review-form button:hover {
+  background: var(--primary-strong);
+  border-color: var(--primary-strong);
+}
+
+.user-review-eligible-at {
+  color: var(--primary-soft);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}

@@ -1,0 +1,234 @@
+.analytics-page {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.analytics-shell {
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.analytics-sidebar {
+  position: sticky;
+  top: calc(var(--space-2) + 72px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.analytics-sidebar h2 {
+  margin: 0;
+  font-size: var(--fs-md);
+}
+
+.analytics-nav {
+  margin-top: var(--space-2);
+  display: grid;
+  gap: 6px;
+}
+
+.analytics-nav a {
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  color: var(--text-primary);
+  font-weight: 600;
+  background: var(--bg-main);
+}
+
+.analytics-nav a.active-link,
+.analytics-nav a:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.analytics-main {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.analytics-breadcrumb {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.analytics-header {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: var(--space-2);
+}
+
+.analytics-header h1 {
+  margin: 0;
+}
+
+.analytics-header p {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+}
+
+.analytics-filter-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: var(--space-1);
+}
+
+.analytics-filter-row select,
+.analytics-filter-row input {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-elevated);
+  font: inherit;
+}
+
+.analytics-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 8px;
+}
+
+.analytics-kpi-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.analytics-kpi-card p {
+  margin: 0;
+}
+
+.analytics-kpi-card .value {
+  margin-top: 5px;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.analytics-card-actions {
+  margin-top: auto;
+}
+
+.analytics-card-link {
+  display: inline-block;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  background: var(--bg-main);
+}
+
+.analytics-card-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.analytics-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.analytics-chart-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  padding: 14px;
+}
+
+.analytics-chart-card h3 {
+  margin: 0 0 var(--space-1);
+}
+
+.analytics-axis-label {
+  font-size: 11px;
+  fill: #64748b;
+}
+
+.analytics-value-label {
+  font-size: 11px;
+  fill: #0f172a;
+  font-weight: 600;
+}
+
+.analytics-bar-list {
+  display: grid;
+  gap: 10px;
+}
+
+.analytics-bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.analytics-bar-label {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.analytics-bar-track {
+  height: 11px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.analytics-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0284c7, #0ea5e9);
+}
+
+.analytics-donut-card {
+  text-align: center;
+}
+
+.analytics-donut-value {
+  margin: 10px 0 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.analytics-donut-caption {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+@media (max-width: 1024px) {
+  .analytics-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-sidebar {
+    position: static;
+  }
+
+  .analytics-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-filter-row {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .analytics-filter-row {
+    grid-template-columns: 1fr;
+  }
+}

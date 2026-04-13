@@ -1,0 +1,151 @@
+.site-footer {
+  margin-top: var(--space-4);
+  background: var(--primary-strong);
+  color: var(--bg-elevated);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-2) var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-3);
+}
+
+.footer-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--bg-elevated);
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.footer-logo-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.28rem;
+  font-weight: 700;
+}
+
+.footer-logo-image {
+  width: 50px;
+  height: 50px;
+}
+
+.footer-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--accent-soft);
+}
+
+.footer-links,
+.contact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.footer-links a,
+.contact-info a {
+  color: var(--bg-elevated);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.footer-links a:hover,
+.contact-info a:hover {
+  color: var(--accent);
+}
+
+.contact-info {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.footer-description,
+.footer-tagline,
+.social-subtitle,
+.copyright {
+  font-size: var(--fs-sm);
+}
+
+.payment-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.footer-links,
+.contact-list,
+.contact-info,
+.footer-bottom-links {
+  font-size: var(--fs-sm);
+}
+
+.social-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.social-link,
+.payment-badge {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  color: var(--bg-elevated);
+  text-decoration: none;
+  background: var(--primary);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.social-link:hover,
+.payment-badge:hover {
+  background: var(--primary-soft);
+  border-color: var(--accent);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+}
+
+.footer-bottom-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.footer-bottom-links {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.footer-bottom-links a {
+  color: var(--accent-soft);
+  text-decoration: none;
+}
+
+.footer-bottom-links a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .footer-logo-text {
+    font-size: 1.14rem;
+  }
+
+  .footer-logo-image {
+    width: 42px;
+    height: 42px;
+  }
+}
